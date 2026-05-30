@@ -1,0 +1,8 @@
+Part Number,Manufacturer,Note
+RN73R1JTTD1002B25,KOA,Thin film 10kΩ ±0.1% ±25ppm/℃ — expects ◎
+RT0402BRD071KL,YAGEO,Thin film 1kΩ ±0.1% ±25ppm/℃ — expects ◎
+TNPW04021K00BEEA,Vishay,Thin film 1kΩ ±0.1% ±25ppm/℃ — expects ◎
+ERA3ARB1002V,Panasonic,Thin film 10kΩ ±0.1% ±10ppm/℃ — expects ◎
+RG1608N-1002-B-T5,Target Supplier,Already RG series — expects REVERSE lookup
+CRCW04021K00FKEA,Vishay,Thick film — expects × (out of scope)
+RT0402XXX999,YAGEO,Invalid format — expects △ (unknown)
