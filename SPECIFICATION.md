@@ -1,9 +1,10 @@
+
 # Susumu Cross-Reference Tool 仕様書
 
 ## 1. 文書概要
 
 - 文書名: Susumu Cross-Reference Tool 仕様書
-- 対象システム: `app.py` / `templates/index.html`
+- 対象システム: `app.py` / `routes/` / `services/` / `parsers/` / `utils/` / `data/` / `templates/`
 - 目的: 電子部品（薄膜チップ抵抗）品番の相互変換と適合判定を行う
 
 ## 2. システム概要

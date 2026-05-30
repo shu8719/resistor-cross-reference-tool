@@ -48,7 +48,7 @@ def process_bulk_dataframe(df: pd.DataFrame) -> pd.DataFrame:
                     "Size": parsed.size or "-",
                     "Res": format_res(parsed.res_ohm) if parsed.res_ohm is not None else "-",
                     "Tol": f"±{parsed.tol_pct}%" if parsed.tol_pct is not None else "-",
-                    "TCR": f"±{parsed.tcr_ppm}" if parsed.tcr_ppm is not None else "-",
+                    "TCR": f"±{parsed.tcr_ppm} ppm/℃" if parsed.tcr_ppm is not None else "-",
                 }
             )
         elif not parsed.is_unknown:
@@ -61,7 +61,7 @@ def process_bulk_dataframe(df: pd.DataFrame) -> pd.DataFrame:
                     "Size": parsed.size,
                     "Res": format_res(parsed.res_ohm),
                     "Tol": f"±{parsed.tol_pct}%",
-                    "TCR": f"±{parsed.tcr_ppm}",
+                    "TCR": f"±{parsed.tcr_ppm} ppm/℃",
                 }
             )
 
