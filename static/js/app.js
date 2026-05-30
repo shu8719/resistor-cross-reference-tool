@@ -13,10 +13,10 @@ createApp({
                 ja: {
                     enter_pn: "品番を入力",
                     analyze_btn: "解析 / 逆引き (自動)",
-                    hint_text: "他社品番 → Susumu変換 | Susumu品番 → 他社逆引き (自動判定)",
+                    hint_text: "他社品番 → 推奨品番変換 | RG/RGV 品番 → 他社逆引き (自動判定)",
                     bulk_upload: "一括アップロード (Excel)",
                     click_upload: "Excelファイルをアップロード",
-                    susumu_proposal: "Susumu 推奨品",
+                    susumu_proposal: "推奨品番",
                     competitor_xref: "他社相当品",
                     reverse_lookup: "逆引きモード",
                     analysis_report: "解析レポート",
@@ -25,10 +25,10 @@ createApp({
                 en: {
                     enter_pn: "Enter Part Number",
                     analyze_btn: "Analyze / Reverse Lookup",
-                    hint_text: "Competitor PN → Susumu | Susumu PN → Competitor (Auto Detect)",
+                    hint_text: "Competitor PN → Target Series | Target Series PN → Competitor (Auto Detect)",
                     bulk_upload: "Bulk Upload (Excel)",
                     click_upload: "Click to upload Excel",
-                    susumu_proposal: "Susumu Proposal",
+                    susumu_proposal: "Recommended Part",
                     competitor_xref: "Competitor Equivalents",
                     reverse_lookup: "REVERSE MODE",
                     analysis_report: "Analysis Report",
@@ -83,7 +83,7 @@ createApp({
                 a.href = url;
                 const now = new Date();
                 const timeStr = `${now.getHours()}${now.getMinutes()}${now.getSeconds()}`;
-                a.download = `Susumu_Result_${timeStr}.xlsx`;
+                a.download = `CrossRef_Result_${timeStr}.xlsx`;
 
                 document.body.appendChild(a);
                 a.click();
@@ -94,6 +94,10 @@ createApp({
                 this.bulkLoading = false;
                 event.target.value = "";
             }
+        },
+        setSample(pn) {
+            this.pn = pn;
+            this.analyze();
         },
         copyToClipboard(text) {
             navigator.clipboard.writeText(text);
