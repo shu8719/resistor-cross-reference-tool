@@ -25,8 +25,8 @@ def analyze():
                 "tol": f"±{parsed.tol_pct}%",
                 "tcr": f"±{parsed.tcr_ppm} ppm/℃",
                 "competitors": competitors,
-                "reason_jp": "Susumu品番から他社相当品を検索しました。",
-                "reason_en": "Searched competitor equivalents from Susumu PN.",
+                "reason_jp": "RG/RGV 品番を検出しました。各社相当品番を生成しました。",
+                "reason_en": "Target-series part detected. Equivalent competitor parts generated.",
             }
         )
 
