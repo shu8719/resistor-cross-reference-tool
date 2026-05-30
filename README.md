@@ -165,7 +165,3 @@ E24/E96 系列の抵抗値判定では `float == float` の比較が信頼でき
 - **共通解析ロジックの抽出** — `routes/analyze.py` と `services/bulk_processor.py` に同一の判定分岐が重複している。共通ヘルパー関数への切り出しで保守性が向上する
 - **テストの追加** — 各パーサーと `utils/resistor_code.py` は純粋関数が多く、ユニットテストを追加しやすい
 - **対応メーカーの拡張** — パーサーが独立モジュールのため、新メーカーの追加は新規ファイル 1 つで対応可能
-
-## Technical Specification
-
-詳細な API 仕様・品番解析フロー・判定ロジックについては [SPECIFICATION.md](SPECIFICATION.md) を参照してください。
