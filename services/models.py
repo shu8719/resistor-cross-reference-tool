@@ -1,5 +1,9 @@
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, Tuple
+
+# A part-number segment: (text, kind). kind is one of
+# series / size / terminal / packaging / taping / res / tol / tcr / other
+Segment = Tuple[str, str]
 
 
 @dataclass(frozen=True)
@@ -10,6 +14,10 @@ class ParsedPN:
     tol_pct: Optional[float] = None
     tcr_ppm: Optional[int] = None
     pkg_code: Optional[str] = None
+    maker: Optional[str] = None      # "KOA", "YAGEO", "Vishay", "Panasonic"
+    series: Optional[str] = None     # "RN73R", "RT", "TNPW", "ERA", "RG", "RGV"
+    segments: Tuple[Segment, ...] = ()
+    tol_span: Optional[Tuple[int, int]] = None  # position of the tolerance code in the normalized PN
 
     @property
     def is_reverse_mode(self) -> bool:
@@ -27,3 +35,6 @@ class ParsedPN:
     def is_unknown(self) -> bool:
         return self.status_jp.startswith("不明")
 
+    @property
+    def maker_series(self) -> str:
+        return " ".join(p for p in (self.maker, self.series) if p)

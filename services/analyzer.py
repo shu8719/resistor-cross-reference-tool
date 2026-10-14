@@ -7,11 +7,22 @@ from parsers.yageo import parse_yageo
 from services.models import ParsedPN
 from utils.normalize import normalize_pn
 
+# Maker names for the thick-film / MELF prefixes we reject (display only)
+_OUT_OF_SCOPE_MAKER = {
+    "UR73": "KOA", "WK73": "KOA", "SR73": "KOA", "RK73": "KOA",
+    "RC": "YAGEO", "AC": "YAGEO",
+    "CRCW": "Vishay",
+    "ERJ": "Panasonic", "EXB": "Panasonic", "ERZ": "Panasonic",
+    "MCR": "ROHM",
+    "MMA": "Vishay", "MMU": "Vishay", "MMB": "Vishay", "SMM": "Vishay",
+}
+
 
 def translate_status(status_jp: str) -> str:
     map_en = {
         "Susumu純正": "Susumu Original",
         "厚膜/対象外": "Thick Film (Out of Scope)",
+        "MELF/対象外": "MELF (Out of Scope)",
         "不明(コード未定義)": "Unknown (Undefined Code)",
         "不明(Panasonic形式不一致)": "Unknown (Panasonic Format Mismatch)",
         "不明(Panasonicコード未定義)": "Unknown (Panasonic Undefined Code)",
@@ -30,10 +41,12 @@ def translate_status(status_jp: str) -> str:
 
 
 def _parse_out_of_scope(pn: str):
-    if pn.startswith(OUT_OF_SCOPE_PREFIXES):
-        return ParsedPN(status_jp="厚膜/対象外")
-    if pn.startswith(MELF_PREFIXES):
-        return ParsedPN(status_jp="厚膜/対象外")
+    for prefix in OUT_OF_SCOPE_PREFIXES:
+        if pn.startswith(prefix):
+            return ParsedPN(status_jp="厚膜/対象外", maker=_OUT_OF_SCOPE_MAKER.get(prefix), series=prefix)
+    for prefix in MELF_PREFIXES:
+        if pn.startswith(prefix):
+            return ParsedPN(status_jp="厚膜/対象外", maker=_OUT_OF_SCOPE_MAKER.get(prefix), series=prefix)
     return None
 
 
@@ -58,4 +71,3 @@ def parse_pn(pn: str) -> ParsedPN:
             return parsed
 
     return ParsedPN(status_jp="不明(コード未定義)")
-
