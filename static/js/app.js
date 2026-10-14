@@ -5,6 +5,7 @@ createApp({
         return {
             pn: "",
             result: null,
+            resultKey: 0, // 結果カードの再描画用（<transition> の key）
             loading: false,
             bulkLoading: false,
             lang: "ja", // デフォルト言語
@@ -56,8 +57,9 @@ createApp({
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ pn: this.pn }),
                 });
-                await new Promise((r) => setTimeout(r, 400));
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
                 this.result = await res.json();
+                this.resultKey += 1;
             } catch (e) {
                 alert("通信エラーが発生しました。/ Connection Error.");
             } finally {

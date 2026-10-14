@@ -16,7 +16,7 @@ def parse_vishay(pn: str) -> Optional[ParsedPN]:
     res = parse_rkm_string(m.group(2))
     tol = {"B": 0.1, "D": 0.5, "F": 1.0}.get(m.group(3))
     tcr = {"Y": 10, "X": 15, "E": 25, "H": 50}.get(m.group(4))
-    if size is None or tol is None or tcr is None:
+    if size is None or tol is None or tcr is None or res is None:
         return None
     return ParsedPN(status_jp="薄膜(Vishay TNPW)", size=size, res_ohm=res, tol_pct=tol, tcr_ppm=tcr)
 

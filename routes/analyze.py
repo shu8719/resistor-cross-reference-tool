@@ -10,8 +10,11 @@ analyze_bp = Blueprint("analyze", __name__)
 
 @analyze_bp.route("/analyze", methods=["POST"])
 def analyze():
-    data = request.json
-    parsed = parse_pn(data["pn"])
+    data = request.get_json(silent=True) or {}
+    pn = data.get("pn")
+    if not isinstance(pn, str) or not pn.strip():
+        return jsonify({"error": "pn is required"}), 400
+    parsed = parse_pn(pn)
 
     # Reverse mode (Susumu PN -> competitors)
     if parsed.is_reverse_mode:
