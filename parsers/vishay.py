@@ -18,5 +18,22 @@ def parse_vishay(pn: str) -> Optional[ParsedPN]:
     tcr = {"Y": 10, "X": 15, "E": 25, "H": 50}.get(m.group(4))
     if size is None or tol is None or tcr is None or res is None:
         return None
-    return ParsedPN(status_jp="薄膜(Vishay TNPW)", size=size, res_ohm=res, tol_pct=tol, tcr_ppm=tcr)
-
+    segments = (
+        ("TNPW", "series"),
+        (m.group(1), "size"),
+        (m.group(2), "res"),
+        (m.group(3), "tol"),
+        (m.group(4), "tcr"),
+        (m.group(5), "packaging"),
+    )
+    return ParsedPN(
+        status_jp="薄膜(Vishay TNPW)",
+        size=size,
+        res_ohm=res,
+        tol_pct=tol,
+        tcr_ppm=tcr,
+        maker="Vishay",
+        series="TNPW",
+        segments=segments,
+        tol_span=m.span(3),
+    )

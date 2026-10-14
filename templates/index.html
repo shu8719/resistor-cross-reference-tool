@@ -3,192 +3,496 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Resistor Cross-Reference Tool</title>
+    <title>Resistor Cross-Ref — 薄膜チップ抵抗 代替品番検索</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans+JP:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        canvas: "var(--bg-canvas)",
+                        surface: "var(--bg-surface)",
+                        sunken: "var(--bg-sunken)",
+                        line: { DEFAULT: "var(--border-default)", strong: "var(--border-strong)" },
+                        ink: { DEFAULT: "var(--text-primary)", 2: "var(--text-secondary)", 3: "var(--text-tertiary)", inverse: "var(--text-inverse)" },
+                        accent: { DEFAULT: "var(--accent)", subtle: "var(--accent-subtle)" },
+                        ok: { DEFAULT: "var(--status-ok)", bg: "var(--status-ok-bg)" },
+                        warn: { DEFAULT: "var(--status-warn)", bg: "var(--status-warn-bg)" },
+                        ng: { DEFAULT: "var(--status-ng)", bg: "var(--status-ng-bg)" },
+                        unknown: { DEFAULT: "var(--status-unknown)", bg: "var(--status-unknown-bg)" },
+                        reverse: { DEFAULT: "var(--status-reverse)", bg: "var(--status-reverse-bg)" },
+                    },
+                    fontFamily: {
+                        sans: ['"IBM Plex Sans JP"', '"Hiragino Sans"', '"Noto Sans JP"', "system-ui", "sans-serif"],
+                        mono: ['"IBM Plex Mono"', "ui-monospace", "SFMono-Regular", "Menlo", "monospace"],
+                    },
+                },
+            },
+        };
+    </script>
     <script src="https://unpkg.com/vue@3.5.13/dist/vue.global.prod.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/css/style.css">
 </head>
-<body class="bg-slate-100 text-slate-800 min-h-screen py-10 px-4">
+<body class="min-h-screen bg-canvas text-ink">
 
-    {% raw %}
-    <div id="app" class="max-w-6xl mx-auto">
-        
-        <header class="mb-10 flex justify-between items-center">
-            <div>
-                <h1 class="text-3xl font-bold tracking-tight text-slate-900">
-                    Resistor <span class="text-blue-600">Cross-Ref</span>
-                </h1>
-                <p class="text-sm text-slate-500 font-medium">Precision Thin Film Resistor Matching</p>
-            </div>
-            
-            <button @click="toggleLang" class="flex items-center gap-2 bg-white px-4 py-2 rounded-full shadow-sm border border-slate-200 hover:border-blue-400 transition cursor-pointer">
-                <span :class="{'font-bold text-blue-600': lang==='ja', 'text-slate-400': lang!=='ja'}">🇯🇵 JP</span>
-                <span class="text-slate-300">|</span>
-                <span :class="{'font-bold text-blue-600': lang==='en', 'text-slate-400': lang!=='en'}">🇺🇸 EN</span>
-            </button>
-        </header>
+{% raw %}
+<div id="app" v-cloak class="min-h-screen flex flex-col">
 
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-            
-            <div class="lg:col-span-5 space-y-6">
-                
-                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
-                    <label class="block text-xs font-bold text-slate-400 uppercase mb-3 tracking-wide">{{ t('enter_pn') }}</label>
-                    
-                    <div class="relative">
-                        <input v-model="pn" @keyup.enter="analyze" type="text" 
-                               placeholder="例: RN73R... or RG1608..." 
-                               class="w-full bg-slate-50 border border-slate-300 text-slate-900 text-lg rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block p-4 font-mono transition-all placeholder-slate-400 uppercase">
-                    </div>
-                    
-                    <button @click="analyze" :disabled="loading"
-                            class="mt-4 w-full text-white bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:ring-blue-300 font-bold rounded-xl text-base px-5 py-4 transition-all shadow-md shadow-blue-100 flex justify-center items-center">
-                        <span v-if="loading" class="loader mr-2"></span>
-                        <span v-else>{{ t('analyze_btn') }}</span>
-                    </button>
-                    
-                    <p class="text-[10px] text-slate-400 mt-2 text-center">
-                        {{ t('hint_text') }}
-                    </p>
-
-                    <div class="flex flex-wrap gap-2 mt-3">
-                        <button @click="setSample('RN73R1JTTD1002B25')"
-                                class="text-[11px] px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-lg font-mono transition-colors">
-                            KOA Sample
-                        </button>
-                        <button @click="setSample('RT0402BRD071KL')"
-                                class="text-[11px] px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-lg font-mono transition-colors">
-                            YAGEO Sample
-                        </button>
-                        <button @click="setSample('TNPW04021K00BEEA')"
-                                class="text-[11px] px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-lg font-mono transition-colors">
-                            Vishay Sample
-                        </button>
-                        <button @click="setSample('RG1608N-1002-B-T5')"
-                                class="text-[11px] px-3 py-1.5 bg-purple-50 hover:bg-purple-100 text-purple-600 rounded-lg font-mono transition-colors">
-                            ↩ Reverse Lookup
-                        </button>
-                    </div>
-                </div>
-
-                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
-                    <div class="flex items-center justify-between mb-4">
-                         <label class="block text-xs font-bold text-slate-400 uppercase tracking-wide">{{ t('bulk_upload') }}</label>
-                    </div>
-                    
-                    <div class="relative group">
-                        <input type="file" @change="handleFileUpload" :disabled="bulkLoading"
-                               class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
-                        <div class="flex flex-col items-center justify-center w-full h-32 border-2 border-slate-300 border-dashed rounded-xl group-hover:bg-slate-50 group-hover:border-blue-400 transition-all bg-slate-50/50">
-                            <div v-if="bulkLoading" class="flex flex-col items-center">
-                                <div class="loader !border-slate-300 !border-t-blue-600 mb-2"></div>
-                                <span class="text-xs text-slate-500 font-bold">Processing...</span>
-                            </div>
-                            <div v-else class="text-center">
-                                <svg class="w-8 h-8 text-slate-400 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
-                                <p class="text-sm text-slate-600 font-medium">{{ t('click_upload') }}</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="lg:col-span-7">
-                <transition name="fade" mode="out-in">
-                    
-                    <div v-if="result" :key="resultKey" class="bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden relative">
-                        
-                        <div :class="{
-                            'bg-emerald-500': result.grade === '◎',
-                            'bg-purple-500': result.mode === 'reverse',
-                            'bg-amber-400': result.grade === '！',
-                            'bg-rose-500': result.grade === '×',
-                            'bg-slate-400': result.grade === '△'
-                        }" class="h-2 w-full"></div>
-
-                        <div class="p-8">
-                            
-                            <div v-if="result.mode === 'reverse'">
-                                <div class="flex justify-between items-center mb-6">
-                                    <h2 class="text-lg font-bold text-slate-700">{{ t('competitor_xref') }}</h2>
-                                    <span class="bg-purple-100 text-purple-700 text-xs font-bold px-3 py-1 rounded-full">{{ t('reverse_lookup') }}</span>
-                                </div>
-                                
-                                <div class="space-y-4">
-                                    <div v-for="(pn, maker) in result.competitors" :key="maker" class="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-100">
-                                        <div class="text-xs font-bold text-slate-400 uppercase w-24">{{ maker }}</div>
-                                        <div class="font-mono font-bold text-slate-800 text-lg select-all">{{ pn }}</div>
-                                        <button @click="copyToClipboard(pn)" class="text-slate-300 hover:text-blue-500 p-2">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div v-else>
-                                <div class="flex justify-between items-start mb-8">
-                                    <div>
-                                        <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">{{ t('susumu_proposal') }}</p>
-                                        <div class="flex items-center gap-3">
-                                            <h2 class="text-4xl font-mono font-bold text-slate-800 tracking-tight">{{ result.proposal || 'No Proposal' }}</h2>
-                                            <button v-if="result.proposal" @click="copyToClipboard(result.proposal)" 
-                                                    class="p-2 text-slate-300 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
-                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
-                                            </button>
-                                        </div>
-                                    </div>
-                                    <div :class="{
-                                        'bg-emerald-100 text-emerald-700': result.grade === '◎',
-                                        'bg-amber-100 text-amber-700': result.grade === '！',
-                                        'bg-rose-100 text-rose-700': result.grade === '×',
-                                        'bg-slate-100 text-slate-600': result.grade === '△'
-                                    }" class="flex items-center justify-center w-12 h-12 rounded-xl font-black text-2xl shadow-sm">
-                                        {{ result.grade }}
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div v-if="result.grade !== '×' && result.grade !== '△'" class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8 mt-8">
-                                <div class="bg-slate-50 p-3 rounded-xl border border-slate-100 text-center">
-                                    <div class="text-[10px] font-bold text-slate-400 uppercase mb-1">Size</div>
-                                    <div class="text-lg font-bold text-slate-700 font-mono">{{ result.size }}</div>
-                                </div>
-                                <div class="bg-slate-50 p-3 rounded-xl border border-slate-100 text-center">
-                                    <div class="text-[10px] font-bold text-slate-400 uppercase mb-1">Resistance</div>
-                                    <div class="text-lg font-bold text-slate-700 font-mono">{{ result.res }}</div>
-                                </div>
-                                <div class="bg-slate-50 p-3 rounded-xl border border-slate-100 text-center">
-                                    <div class="text-[10px] font-bold text-slate-400 uppercase mb-1">Tolerance</div>
-                                    <div class="text-lg font-bold text-slate-700 font-mono">{{ result.tol }}</div>
-                                </div>
-                                <div class="bg-slate-50 p-3 rounded-xl border border-slate-100 text-center">
-                                    <div class="text-[10px] font-bold text-slate-400 uppercase mb-1">T.C.R.</div>
-                                    <div class="text-lg font-bold text-slate-700 font-mono">{{ result.tcr }}</div>
-                                </div>
-                            </div>
-
-                            <div class="bg-slate-50 rounded-xl p-5 border border-slate-100">
-                                <p class="text-xs font-bold text-slate-400 uppercase mb-2">{{ t('analysis_report') }}</p>
-                                <p class="text-sm text-slate-600 whitespace-pre-wrap leading-relaxed font-medium">
-                                    {{ lang === 'ja' ? result.reason_jp : result.reason_en }}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div v-else class="h-full min-h-[400px] bg-slate-50/50 rounded-2xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-400">
-                        <svg class="w-12 h-12 mb-4 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path></svg>
-                        <p class="font-bold text-sm uppercase tracking-widest">{{ t('bidirectional') }}</p>
-                        <p class="text-xs mt-2 opacity-60">Competitor ⇄ Target Series</p>
-                    </div>
-
-                </transition>
+    <!-- ================= App Header ================= -->
+    <header class="bg-surface border-b border-line sticky top-0 z-20">
+        <div class="max-w-[1440px] mx-auto h-16 px-4 sm:px-6 lg:px-10 flex items-center gap-5 lg:gap-10">
+            <a href="#" @click.prevent="go('search')" class="flex items-center gap-2.5 shrink-0">
+                <span class="w-[30px] h-[30px] rounded-[7px] bg-accent flex items-center justify-center">
+                    <img src="/static/img/logo-mark.svg" width="18" height="18" alt="">
+                </span>
+                <span class="hidden sm:flex flex-col leading-tight">
+                    <span class="text-[15px] font-bold text-ink">Resistor Cross-Ref</span>
+                    <span class="text-[11px] text-ink-3">{{ t('tagline') }}</span>
+                </span>
+            </a>
+            <nav class="flex h-16 gap-4 lg:gap-6 overflow-x-auto min-w-0">
+                <button v-for="tab in tabs" :key="tab.key" type="button"
+                        :class="['nav-tab', view === tab.key && 'nav-tab-active']"
+                        @click="go(tab.key)">{{ t(tab.label) }}</button>
+            </nav>
+            <div class="flex-1"></div>
+            <div class="seg shrink-0" role="group" :aria-label="t('language')">
+                <button type="button" :class="['seg-item', lang === 'ja' && 'seg-item-active']" @click="setLang('ja')">日本語</button>
+                <button type="button" :class="['seg-item', lang === 'en' && 'seg-item-active']" @click="setLang('en')">EN</button>
             </div>
         </div>
-    </div>
-    {% endraw %}
+    </header>
 
-    <script src="/static/js/app.js"></script>
+    <main class="flex-1 w-full max-w-[1248px] mx-auto px-4 sm:px-6 pt-8 lg:pt-10 pb-[72px] flex flex-col gap-7">
+
+        <!-- ================= 01-03: 品番検索 ================= -->
+        <template v-if="view === 'search'">
+            <section class="flex flex-col gap-3.5">
+                <div class="flex flex-col gap-1.5">
+                    <h1 class="text-2xl font-bold text-ink">{{ t('search_title') }}</h1>
+                    <p class="text-sm text-ink-2">{{ t('search_sub') }}</p>
+                </div>
+
+                <form class="flex flex-col sm:flex-row gap-3 sm:items-center" @submit.prevent="analyze">
+                    <label :class="['input-shell flex-1 min-w-0', pn && 'input-shell-filled']">
+                        <img src="/static/img/icon-search.svg" width="20" height="20" alt="">
+                        <input v-model="pn" type="text" autofocus autocomplete="off" autocapitalize="characters" spellcheck="false"
+                               :placeholder="t('placeholder')" :aria-label="t('search_title')"
+                               class="flex-1 min-w-0 bg-transparent outline-none font-mono text-lg sm:text-xl font-medium text-ink placeholder:text-ink-3 placeholder:font-normal placeholder:text-base">
+                        <button v-if="pn" type="button" class="text-xs text-ink-3 hover:text-ink-2" @click="clearInput">{{ t('clear') }}</button>
+                        <kbd class="key hidden sm:inline-flex">Enter ↵</kbd>
+                    </label>
+                    <button type="submit" class="btn btn-primary h-[60px] sm:w-auto" :disabled="loading || !pn.trim()">
+                        <span v-if="loading" class="loader"></span>
+                        <span>{{ t('analyze_btn') }}</span>
+                    </button>
+                </form>
+
+                <div class="flex items-center gap-2 flex-wrap text-xs">
+                    <span class="text-ink-3 font-medium">{{ t('samples') }}</span>
+                    <button v-for="s in samples" :key="s.pn" type="button" class="chip" @click="runSample(s.pn)">
+                        <span class="font-semibold text-ink-2">{{ s.maker === 'reverse' ? t('reverse_chip') : s.maker }}</span>
+                        <span class="font-mono text-ink">{{ s.pn }}</span>
+                    </button>
+                </div>
+            </section>
+
+            <section class="grid grid-cols-[minmax(0,1fr)] lg:grid-cols-[minmax(0,1fr)_384px] gap-6 items-start">
+                <!-- -------- Result card -------- -->
+                <transition name="fade" mode="out-in">
+                    <div v-if="result" :key="resultKey" class="card p-5 sm:p-6 flex flex-col gap-6 min-w-0">
+
+                        <div class="flex items-center gap-3 flex-wrap">
+                            <span :class="['badge', 'badge-' + status]"><b>{{ statusSymbol(status) }}</b><span>{{ statusLabel(status) }}</span></span>
+                            <span class="flex-1"></span>
+                            <span class="text-[13px] text-ink-2">{{ statusNote }}</span>
+                        </div>
+
+                        <!-- 01: 代替候補あり -->
+                        <template v-if="result.grade === '◎'">
+                            <div class="flex flex-col gap-1.5">
+                                <p class="text-xs font-semibold text-ink-3 tracking-[0.04em]">{{ t('recommended') }}</p>
+                                <div class="flex items-center gap-3 flex-wrap">
+                                    <p class="font-mono font-semibold text-[32px] sm:text-[40px] leading-[1.3] text-ink break-all">{{ result.proposal }}</p>
+                                    <span class="flex-1"></span>
+                                    <div class="flex items-center gap-3">
+                                        <button type="button" class="btn btn-secondary" @click="copy(result.proposal)">{{ copied === result.proposal ? t('copied') : t('copy') }}</button>
+                                        <button type="button" class="btn btn-ghost" @click="runSample(result.proposal)">{{ t('check_reverse') }}</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="flex flex-col gap-2.5">
+                                <h3 class="text-sm font-semibold text-ink">{{ t('spec_compare') }}</h3>
+                                <div class="table-shell overflow-x-auto">
+                                    <table class="min-w-[560px]">
+                                        <thead>
+                                            <tr>
+                                                <th class="w-[140px]">{{ t('item') }}</th>
+                                                <th>{{ t('input_part') }} <span class="font-mono">{{ result.input_pn }}</span></th>
+                                                <th>{{ t('proposed_part') }} <span class="font-mono">{{ result.proposal }}</span></th>
+                                                <th class="w-[120px]">{{ t('verdict') }}</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr v-for="row in result.compare" :key="row.key">
+                                                <td class="text-ink-2 font-medium">{{ specLabel(row.key) }}</td>
+                                                <td class="font-mono text-ink">{{ row.input }}</td>
+                                                <td class="font-mono font-semibold text-ink">{{ row.proposal }}</td>
+                                                <td :class="['text-[13px] font-semibold whitespace-nowrap', row.verdict === 'differs' ? 'text-status-warn' : 'text-status-ok']">{{ verdictLabel(row.verdict) }}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <div v-if="result.segments && result.segments.length" class="flex flex-col gap-2.5">
+                                <h3 class="text-sm font-semibold text-ink">{{ t('breakdown') }}</h3>
+                                <div class="flex gap-1.5 flex-wrap">
+                                    <div v-for="(s, i) in result.segments" :key="i" class="flex flex-col items-center gap-1.5">
+                                        <span :class="['seg-chip', isKeySegment(s.kind) && 'seg-chip-key']">{{ s.text }}</span>
+                                        <span class="text-[11px] text-ink-3">{{ segLabel(s.kind) }}</span>
+                                    </div>
+                                </div>
+                                <p class="text-xs text-ink-3">{{ t('breakdown_note') }}</p>
+                            </div>
+                        </template>
+
+                        <!-- 02: 提案できない場合（！ / × / △） -->
+                        <template v-else-if="result.mode === 'normal'">
+                            <h2 class="text-2xl sm:text-[28px] font-bold text-ink leading-tight">{{ noProposalTitle }}</h2>
+
+                            <div v-if="result.reason" :class="['reason', 'reason-' + status]">
+                                <span class="reason-icon">{{ statusSymbol(status) }}</span>
+                                <div class="flex flex-col gap-1 min-w-0">
+                                    <p class="reason-title text-[15px] font-semibold">{{ status === 'warn' ? t('reason_prefix') : '' }}{{ L(result.reason, 'title') }}</p>
+                                    <p class="text-[13px] leading-5 text-ink-2">{{ L(result.reason, 'detail') }}</p>
+                                </div>
+                            </div>
+
+                            <div v-if="result.checks" class="flex flex-col gap-2.5">
+                                <h3 class="text-sm font-semibold text-ink">{{ t('spec_check') }}</h3>
+                                <div class="table-shell overflow-x-auto">
+                                    <table class="min-w-[520px]">
+                                        <thead>
+                                            <tr>
+                                                <th class="w-[140px]">{{ t('item') }}</th>
+                                                <th>{{ t('input_part') }} <span class="font-mono">{{ result.input_pn }}</span></th>
+                                                <th class="w-[220px]">{{ t('verdict') }}</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr v-for="row in result.checks" :key="row.key">
+                                                <td class="text-ink-2 font-medium">{{ specLabel(row.key) }}</td>
+                                                <td :class="['font-mono', row.ok ? 'text-ink' : 'font-semibold text-status-ng']">{{ row.value }}</td>
+                                                <td :class="['text-[13px] font-semibold', row.ok ? 'text-status-ok' : 'text-status-ng']">
+                                                    <template v-if="row.ok">{{ t('check_ok') }}</template>
+                                                    <template v-else>{{ t('check_ng') }}<span v-if="L(row, 'note')">（{{ L(row, 'note') }}）</span></template>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <div v-if="result.retry_options && result.retry_options.length" class="flex flex-col gap-2.5">
+                                <h3 class="text-sm font-semibold text-ink">{{ t('retry_title') }}</h3>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <button v-for="o in result.retry_options" :key="o.pn" type="button" class="retry" @click="runSample(o.pn)">
+                                        <span class="flex flex-col gap-0.5 min-w-0 flex-1">
+                                            <span class="text-xs text-ink-3">{{ t('retry_case', { tol: o.tol }) }}</span>
+                                            <span class="font-mono text-[15px] font-medium text-ink break-all">{{ o.pn }}</span>
+                                        </span>
+                                        <span class="text-[13px] font-semibold text-accent shrink-0">{{ t('search_arrow') }}</span>
+                                    </button>
+                                </div>
+                                <p class="text-xs text-ink-3">{{ t('retry_note') }}</p>
+                            </div>
+                        </template>
+
+                        <!-- 03: 逆引き -->
+                        <template v-else>
+                            <div class="flex flex-col gap-1.5">
+                                <p class="text-xs font-semibold text-ink-3 tracking-[0.04em]">{{ t('input_rg') }}</p>
+                                <p class="font-mono font-semibold text-[28px] sm:text-[32px] leading-[1.3] text-ink break-all">{{ result.display_pn }}</p>
+                            </div>
+
+                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                                <div v-for="k in ['size', 'res', 'tol', 'tcr']" :key="k" class="bg-sunken rounded-lg px-3.5 py-2.5 flex flex-col gap-0.5 min-w-0">
+                                    <span class="text-[11px] font-medium text-ink-3">{{ specLabel(k) }}</span>
+                                    <span class="font-mono font-semibold text-base text-ink truncate">{{ result[k] }}</span>
+                                </div>
+                            </div>
+
+                            <div class="flex items-center gap-3 flex-wrap">
+                                <h3 class="text-sm font-semibold text-ink">{{ t('competitors') }}</h3>
+                                <span class="inline-flex px-2 py-px rounded-full bg-sunken text-xs font-semibold text-ink-2">{{ t('count', { n: result.competitor_rows.length }) }}</span>
+                                <span class="flex-1"></span>
+                                <button v-if="result.competitor_rows.length" type="button" class="btn btn-secondary" @click="copyCompetitorList">{{ copied === 'list' ? t('copied') : t('copy_list') }}</button>
+                            </div>
+
+                            <div v-if="result.competitor_rows.length" class="table-shell overflow-x-auto">
+                                <table class="min-w-[560px]">
+                                    <thead>
+                                        <tr>
+                                            <th class="w-[160px]">{{ t('maker') }}</th>
+                                            <th class="w-[150px]">{{ t('series') }}</th>
+                                            <th>{{ t('equivalent_pn') }}</th>
+                                            <th class="w-[72px]"><span class="sr-only">{{ t('copy') }}</span></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr v-for="row in result.competitor_rows" :key="row.maker">
+                                            <td class="font-semibold text-ink">{{ row.maker }}</td>
+                                            <td class="text-[13px] text-ink-2 whitespace-nowrap">{{ row.series }}</td>
+                                            <td class="font-mono font-medium text-[15px] text-ink">{{ row.pn }}</td>
+                                            <td><button type="button" class="text-[13px] font-medium text-accent hover:underline" @click="copy(row.pn)">{{ copied === row.pn ? t('copied') : t('copy') }}</button></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div v-else class="reason reason-warn">
+                                <span class="reason-icon">！</span>
+                                <div class="flex flex-col gap-1">
+                                    <p class="reason-title text-[15px] font-semibold">{{ t('no_competitors_title') }}</p>
+                                    <p class="text-[13px] leading-5 text-ink-2">{{ t('no_competitors_detail') }}</p>
+                                </div>
+                            </div>
+
+                            <div class="notice">
+                                <span class="font-bold">i</span>
+                                <p class="flex-1">{{ t('reverse_notice') }}</p>
+                            </div>
+                        </template>
+                    </div>
+
+                    <!-- Empty state -->
+                    <div v-else class="card p-6 min-h-[280px] flex flex-col items-center justify-center text-center gap-2">
+                        <span class="w-11 h-11 rounded-full bg-sunken flex items-center justify-center">
+                            <img src="/static/img/icon-search.svg" width="20" height="20" alt="">
+                        </span>
+                        <p class="text-sm font-semibold text-ink-2">{{ t('empty_title') }}</p>
+                        <p class="text-xs text-ink-3">{{ t('empty_sub') }}</p>
+                    </div>
+                </transition>
+
+                <!-- -------- Side -------- -->
+                <aside class="flex flex-col gap-6 min-w-0">
+                    <div v-if="result" class="card p-6 flex flex-col gap-4">
+                        <h3 class="text-sm font-semibold text-ink">{{ t('process') }}</h3>
+                        <div v-for="(s, i) in result.steps" :key="i" class="flex gap-3 items-start">
+                            <span :class="['step-dot', 'step-' + s.state]">{{ stepSymbol(s.state) }}</span>
+                            <div class="flex flex-col gap-0.5 min-w-0">
+                                <p :class="['text-[13px] font-semibold', s.state === 'skip' ? 'text-ink-3' : 'text-ink']">{{ L(s, 'title') }}</p>
+                                <p :class="['text-xs break-all', s.state === 'ok' ? 'font-mono text-ink-2' : s.state === 'ng' ? 'text-status-ng' : s.state === 'skip' ? 'text-ink-3' : 'text-ink-2']">{{ L(s, 'detail') }}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card p-6 flex flex-col gap-1">
+                        <div class="flex items-center">
+                            <h3 class="text-sm font-semibold text-ink">{{ t('recent') }}</h3>
+                            <span class="flex-1"></span>
+                            <button v-if="recent.length" type="button" class="text-xs text-ink-3 hover:text-ink-2" @click="clearRecent">{{ t('clear_all') }}</button>
+                        </div>
+                        <p v-if="!recent.length" class="text-[13px] text-ink-3 py-2.5">{{ t('recent_empty') }}</p>
+                        <button v-for="r in recent" :key="r.pn" type="button"
+                                class="flex items-center gap-2 py-2.5 border-b border-line last:border-b-0 text-left w-full"
+                                @click="runSample(r.pn)">
+                            <span class="font-mono text-[13px] text-ink truncate">{{ r.pn }}</span>
+                            <span class="flex-1"></span>
+                            <span :class="['badge', 'badge-' + gradeStatus(r.grade)]"><b>{{ statusSymbol(gradeStatus(r.grade)) }}</b><span>{{ statusLabel(gradeStatus(r.grade)) }}</span></span>
+                        </button>
+                    </div>
+                </aside>
+            </section>
+        </template>
+
+        <!-- ================= 04: Excel一括解析 ================= -->
+        <template v-else-if="view === 'bulk'">
+            <section class="flex flex-col sm:flex-row sm:items-end gap-4">
+                <div class="flex-1 flex flex-col gap-1.5 min-w-0">
+                    <h1 class="text-2xl font-bold text-ink">{{ t('bulk_title') }}</h1>
+                    <p class="text-sm text-ink-2">{{ t('bulk_sub') }}</p>
+                </div>
+                <button type="button" class="btn btn-primary" :disabled="!bulk || bulkDownloading" @click="downloadBulk">
+                    <span v-if="bulkDownloading" class="loader"></span>
+                    <span>{{ t('download_xlsx') }}</span>
+                </button>
+            </section>
+
+            <section class="card p-5 flex flex-col md:flex-row gap-6 md:items-center">
+                <label :class="['dropzone', dragOver && 'dropzone-over']"
+                       @dragover.prevent="dragOver = true" @dragleave.prevent="dragOver = false" @drop.prevent="onDrop">
+                    <input ref="fileInput" type="file" accept=".xlsx,.xlsm,.xls" class="sr-only" :disabled="bulkLoading" @change="onFileChange">
+                    <img src="/static/img/icon-upload.svg" width="22" height="22" alt="">
+                    <span class="text-[13px] font-medium text-ink-2">{{ t('drop_hint') }}</span>
+                    <span class="text-[11px] text-ink-3">{{ t('drop_sub') }}</span>
+                </label>
+
+                <div class="flex-1 flex items-center gap-3.5 min-w-0">
+                    <template v-if="bulkLoading">
+                        <span class="loader loader-dark"></span>
+                        <p class="text-[13px] text-ink-2">{{ t('bulk_loading') }}</p>
+                    </template>
+                    <template v-else-if="bulk">
+                        <span class="w-11 h-11 rounded-lg bg-ok-bg text-ok font-mono font-bold text-[11px] flex items-center justify-center shrink-0">XLS</span>
+                        <div class="flex flex-col gap-1 min-w-0 flex-1">
+                            <p class="font-mono font-semibold text-[15px] text-ink truncate">{{ bulk.filename }}</p>
+                            <p class="text-[13px] text-ink-2">{{ t('bulk_info', { n: bulk.row_count, col: bulk.pn_column || '-' }) }}</p>
+                        </div>
+                        <button type="button" class="btn btn-ghost shrink-0" @click="pickFile">{{ t('choose_other') }}</button>
+                    </template>
+                    <p v-else class="text-[13px] text-ink-3">{{ t('bulk_empty') }}</p>
+                </div>
+            </section>
+
+            <template v-if="bulk">
+                <section class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
+                    <div class="stat stat-all">
+                        <p class="text-xs font-semibold text-ink-2">{{ t('all') }}</p>
+                        <p class="font-mono font-semibold text-[28px] leading-tight text-ink">{{ bulk.rows.length }}</p>
+                        <p class="text-[11px] text-ink-3">100%</p>
+                    </div>
+                    <div v-for="s in statusOrder" :key="s" :class="['stat', 'stat-' + s]">
+                        <p :class="['text-xs font-semibold', 'text-status-' + s]">{{ statusSymbol(s) }} {{ statusLabel(s) }}</p>
+                        <p class="font-mono font-semibold text-[28px] leading-tight text-ink">{{ bulkCounts[s] }}</p>
+                        <p class="text-[11px] text-ink-3">{{ pct(bulkCounts[s]) }}%</p>
+                    </div>
+                </section>
+
+                <section class="card overflow-hidden">
+                    <div class="flex flex-wrap items-center gap-3 px-4 py-3.5 border-b border-line">
+                        <div class="seg overflow-x-auto">
+                            <button type="button" :class="['seg-item', bulkFilter === 'all' && 'seg-item-active']" @click="setFilter('all')">
+                                <span class="font-semibold text-ink">{{ t('all') }}</span><span class="font-mono text-ink-3">{{ bulk.rows.length }}</span>
+                            </button>
+                            <button v-for="s in statusOrder" :key="s" type="button" :class="['seg-item', bulkFilter === s && 'seg-item-active']" @click="setFilter(s)" :title="statusLabel(s)">
+                                <span :class="['font-semibold', 'text-status-' + s]">{{ statusSymbol(s) }}</span><span class="font-mono text-ink-3">{{ bulkCounts[s] }}</span>
+                            </button>
+                        </div>
+                        <span class="flex-1"></span>
+                        <label class="filter-search">
+                            <img src="/static/img/icon-filter-search.svg" width="16" height="16" alt="">
+                            <input v-model="bulkQuery" type="text" :placeholder="t('filter_pn')" @input="bulkPage = 1">
+                        </label>
+                    </div>
+
+                    <div class="table-shell overflow-x-auto !border-0 !rounded-none">
+                        <table class="table-compact min-w-[960px]">
+                            <thead>
+                                <tr>
+                                    <th class="w-12">{{ t('row') }}</th>
+                                    <th class="w-[210px]">{{ t('input_pn') }}</th>
+                                    <th class="w-[160px]">{{ t('maker_series') }}</th>
+                                    <th class="w-[150px]">{{ t('verdict') }}</th>
+                                    <th class="w-[210px]">{{ t('proposal_or_equiv') }}</th>
+                                    <th>{{ t('note') }}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="r in pagedRows" :key="r.row">
+                                    <td class="font-mono text-xs text-ink-3">{{ r.row }}</td>
+                                    <td class="font-mono font-medium text-ink break-all">{{ r.pn || '—' }}</td>
+                                    <td :class="r.maker_series ? 'text-ink-2' : 'text-ink-3'">{{ r.maker_series || '—' }}</td>
+                                    <td><span :class="['badge', 'badge-' + gradeStatus(r.grade)]"><b>{{ statusSymbol(gradeStatus(r.grade)) }}</b><span>{{ statusLabel(gradeStatus(r.grade)) }}</span></span></td>
+                                    <td>
+                                        <button v-if="r.grade === 'REVERSE'" type="button" class="font-semibold text-status-reverse hover:underline text-left" @click="openFromBulk(r.pn)">{{ t('equiv_count', { n: competitorCount(r) }) }}</button>
+                                        <span v-else-if="r.grade === '◎'" class="font-mono font-semibold text-ink">{{ r.proposal }}</span>
+                                        <span v-else class="font-mono text-ink-3">—</span>
+                                    </td>
+                                    <td :class="noteClass(r)">{{ noteText(r) }}</td>
+                                </tr>
+                                <tr v-if="!filteredRows.length">
+                                    <td colspan="6" class="text-center text-ink-3 py-8">{{ t('no_rows') }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="flex items-center gap-1.5 px-4 py-3 border-t border-line">
+                        <span class="text-xs text-ink-3">{{ t('range_of', { from: pageFrom, to: pageTo, total: filteredRows.length }) }}</span>
+                        <span class="flex-1"></span>
+                        <button type="button" class="page-btn" :disabled="bulkPage <= 1" @click="bulkPage--">‹</button>
+                        <template v-for="(p, i) in pageItems" :key="i">
+                            <span v-if="p === '…'" class="page-btn" aria-hidden="true">…</span>
+                            <button v-else type="button" :class="['page-btn', p === bulkPage && 'page-btn-active']" @click="bulkPage = p">{{ p }}</button>
+                        </template>
+                        <button type="button" class="page-btn" :disabled="bulkPage >= totalPages" @click="bulkPage++">›</button>
+                    </div>
+                </section>
+            </template>
+        </template>
+
+        <!-- ================= 対応品番・仕様 ================= -->
+        <template v-else>
+            <section class="flex flex-col gap-1.5">
+                <h1 class="text-2xl font-bold text-ink">{{ t('specs_title') }}</h1>
+                <p class="text-sm text-ink-2">{{ t('specs_sub') }}</p>
+            </section>
+
+            <section class="card p-6 flex flex-col gap-2.5">
+                <h3 class="text-sm font-semibold text-ink">{{ t('supported_parts') }}</h3>
+                <div class="table-shell overflow-x-auto">
+                    <table class="min-w-[560px]">
+                        <thead>
+                            <tr>
+                                <th class="w-[160px]">{{ t('maker') }}</th>
+                                <th class="w-[200px]">{{ t('series') }}</th>
+                                <th>{{ t('example') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="row in supported" :key="row.pn">
+                                <td class="font-semibold text-ink">{{ L(row, 'maker') }}</td>
+                                <td class="text-[13px] text-ink-2">{{ L(row, 'series') }}</td>
+                                <td><button type="button" class="chip" @click="runSample(row.pn)"><span class="font-mono text-ink">{{ row.pn }}</span><span class="text-accent font-semibold">{{ t('search_arrow') }}</span></button></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section class="card p-6 flex flex-col gap-2.5">
+                <h3 class="text-sm font-semibold text-ink">{{ t('grade_meaning') }}</h3>
+                <div class="table-shell">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th class="w-[180px]">{{ t('verdict') }}</th>
+                                <th>{{ t('meaning') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="s in statusOrder" :key="s">
+                                <td><span :class="['badge', 'badge-' + s]"><b>{{ statusSymbol(s) }}</b><span>{{ statusLabel(s) }}</span></span></td>
+                                <td class="text-[13px] text-ink-2">{{ t('meaning_' + s) }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section class="card p-6 flex flex-col gap-2.5">
+                <h3 class="text-sm font-semibold text-ink">{{ t('notes') }}</h3>
+                <ul class="list-disc pl-5 flex flex-col gap-1.5 text-[13px] leading-5 text-ink-2">
+                    <li>{{ t('note_rgv') }}</li>
+                    <li>{{ t('note_tol') }}</li>
+                    <li>{{ t('note_verify') }}</li>
+                </ul>
+            </section>
+        </template>
+    </main>
+
+    <transition name="fade">
+        <div v-if="toast" class="toast" role="status">{{ toast }}</div>
+    </transition>
+</div>
+{% endraw %}
+
+<script src="/static/js/app.js"></script>
 </body>
 </html>

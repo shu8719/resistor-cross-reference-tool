@@ -8,6 +8,19 @@ from utils.resistor_code import is_e24, is_e96, parse_digit_code
 RE_SUSUMU = re.compile(r"^(RG|RGV)(\d{4})([NPQRV])([0-9R]{3,4})([BDFPW])")
 
 
+def _segments(pn: str, m: "re.Match[str]"):
+    segs = [
+        (m.group(1), "series"),
+        (m.group(2), "size"),
+        (m.group(3), "tcr"),
+        (m.group(4), "res"),
+        (m.group(5), "tol"),
+    ]
+    if m.end() < len(pn):
+        segs.append((pn[m.end() :], "packaging"))
+    return tuple(segs)
+
+
 def parse_susumu(pn: str) -> Optional[ParsedPN]:
     m = RE_SUSUMU.search(pn)
     if not m:
@@ -53,5 +66,13 @@ def parse_susumu(pn: str) -> Optional[ParsedPN]:
         if not (is_e24(res) or is_e96(res)):
             return None
 
-    return ParsedPN(status_jp="Susumu純正", size=size, res_ohm=res, tol_pct=tol, tcr_ppm=tcr)
-
+    return ParsedPN(
+        status_jp="Susumu純正",
+        size=size,
+        res_ohm=res,
+        tol_pct=tol,
+        tcr_ppm=tcr,
+        series=series,
+        segments=_segments(pn, m),
+        tol_span=m.span(5),
+    )
