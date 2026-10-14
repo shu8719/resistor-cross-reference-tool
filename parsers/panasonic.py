@@ -43,6 +43,8 @@ def parse_panasonic(pn: str) -> Optional[ParsedPN]:
         return ParsedPN(status_jp="不明(Panasonicコード未定義)")
 
     res = parse_digit_code(res_code)
+    if res is None:
+        return ParsedPN(status_jp="不明(Panasonicコード未定義)")
     range_table = PANA_ERA_RANGE.get(st)
     if range_table is None:
         return ParsedPN(

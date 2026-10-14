@@ -1,4 +1,4 @@
-from typing import Optional, Tuple
+from typing import Dict, Optional, Tuple
 
 from data.packaging import RGV_PACKAGING_TABLE
 from data.susumu_specs import (
@@ -7,6 +7,8 @@ from data.susumu_specs import (
     SUSUMU_TCR_ALLOWED_RG,
     SUSUMU_TCR_ALLOWED_RGV,
     SUSUMU_TCR_CODE,
+    SUSUMU_TOL_CODE_RG,
+    SUSUMU_TOL_CODE_RGV,
 )
 from utils.resistor_code import get_susumu_res_code, is_e24, is_e96
 
@@ -40,23 +42,20 @@ def generate_proposal(size: Optional[str], res: float, tol: float, tcr: int) -> 
     if not res_series_ok:
         return "！", "", "範囲外(抵抗値系列対象外)", "Out of Range (Resistance Series Not Supported)", series
 
+    # Pick the loosest catalog tolerance that is still equal to or tighter than the
+    # requested one (never propose a looser part). Requests tighter than the catalog
+    # minimum, or looser than ±0.5%, are rejected.
+    def select_tol_code(v: float, codes: Dict[str, float]) -> Optional[str]:
+        candidates = [(pct, code) for code, pct in codes.items() if pct <= v + 1e-9]
+        if not candidates or v > 0.5:
+            return None
+        return max(candidates)[1]
+
     def select_tol_code_rg(v: float) -> Optional[str]:
-        if v <= 0.02:
-            return "P"
-        if v <= 0.05:
-            return "W"
-        if v <= 0.1:
-            return "B"
-        if v <= 0.5:
-            return "D"
-        return None
+        return select_tol_code(v, SUSUMU_TOL_CODE_RG)
 
     def select_tol_code_rgv(v: float) -> Optional[str]:
-        if v <= 0.1:
-            return "B"
-        if v <= 0.5:
-            return "D"
-        return None
+        return select_tol_code(v, SUSUMU_TOL_CODE_RGV)
 
     s_tol = select_tol_code_rg(tol) if series == "RG" else select_tol_code_rgv(tol)
     if s_tol is None:

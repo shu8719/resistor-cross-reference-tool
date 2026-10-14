@@ -15,6 +15,8 @@ def parse_koa(pn: str) -> Optional[ParsedPN]:
     series_code = m.group(1)
     size = SIZE_MAP_KOA.get(m.group(2))
     res = parse_digit_code(m.group(3))
+    if res is None:
+        return ParsedPN(status_jp="不明(コード未定義)")
     tol_map = {"A": 0.05, "B": 0.1, "C": 0.25, "D": 0.5, "F": 1.0}
     tol_code = m.group(4)
     if tol_code not in tol_map:

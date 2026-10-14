@@ -3,7 +3,7 @@ from typing import Optional
 
 from data.susumu_specs import RG_SIZES, RGV_SIZES, SUSUMU_TCR_ALLOWED_RGV, SUSUMU_TOL_CODE_RG, SUSUMU_TOL_CODE_RGV
 from services.models import ParsedPN
-from utils.resistor_code import is_e24, is_e96
+from utils.resistor_code import is_e24, is_e96, parse_digit_code
 
 RE_SUSUMU = re.compile(r"^(RG|RGV)(\d{4})([NPQRV])([0-9R]{3,4})([BDFPW])")
 
@@ -39,12 +39,9 @@ def parse_susumu(pn: str) -> Optional[ParsedPN]:
         return None
     tol = tol_map[tol_code]
 
-    if "R" in res_str:
-        res = float(res_str.replace("R", "."))
-    else:
-        digits = int(res_str[:-1])
-        multiplier = 10 ** int(res_str[-1])
-        res = digits * multiplier
+    res = parse_digit_code(res_str)
+    if res is None:
+        return None
 
     # Validate resistance series by rule
     if series == "RG" and size != "3216":

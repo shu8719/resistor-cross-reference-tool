@@ -6,6 +6,7 @@ from routes.bulk import bulk_bp
 
 def create_app() -> Flask:
     app = Flask(__name__)
+    app.config["MAX_CONTENT_LENGTH"] = 10 * 1024 * 1024  # 10 MB upload limit
     app.jinja_env.variable_start_string = "[["
     app.jinja_env.variable_end_string = "]]"
 

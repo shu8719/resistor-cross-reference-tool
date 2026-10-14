@@ -1,5 +1,5 @@
 import math
-from typing import Optional, Set
+from typing import Optional, Set, Tuple
 
 from data.susumu_specs import E24_VALUES, E96_VALUES
 
@@ -12,36 +12,40 @@ def format_res(val: float) -> str:
     return f"{val:g} Ω"
 
 
-def parse_rkm_string(res_str: str) -> float:
-    """Parse competitor values like 10K, 4R7, 1M, etc."""
+def _safe_float(s: str) -> Optional[float]:
+    try:
+        return float(s)
+    except ValueError:
+        return None
+
+
+def parse_rkm_string(res_str: str) -> Optional[float]:
+    """Parse competitor values like 10K, 4R7, 1M, etc. Returns None if malformed."""
     res_str = res_str.upper()
-    if "K" in res_str:
-        return float(res_str.replace("K", ".")) * 1000
-    if "M" in res_str:
-        return float(res_str.replace("M", ".")) * 1_000_000
-    if "R" in res_str:
-        return float(res_str.replace("R", "."))
-    return float(res_str)
+    for letter, mult in (("K", 1_000), ("M", 1_000_000), ("R", 1)):
+        if res_str.count(letter) == 1:
+            v = _safe_float(res_str.replace(letter, "."))
+            return v * mult if v is not None else None
+        if letter in res_str:
+            return None
+    return _safe_float(res_str)
 
 
-def parse_digit_code(res_str: str) -> float:
-    """Parse digit codes like 1002 (10.0k), 4R70, etc."""
+def parse_digit_code(res_str: str) -> Optional[float]:
+    """Parse digit codes like 1002 (10.0k), 4R70, etc. Returns None if malformed."""
     if "R" in res_str:
-        return float(res_str.replace("R", "."))
-    digits = float(res_str[:-1])
-    multiplier = 10 ** int(res_str[-1])
-    return digits * multiplier
+        if res_str.count("R") != 1:
+            return None
+        return _safe_float(res_str.replace("R", "."))
+    if len(res_str) < 2 or not res_str.isdigit():
+        return None
+    return float(res_str[:-1]) * 10 ** int(res_str[-1])
 
 
 def parse_yageo_rt_res_code(code: str) -> Optional[float]:
-    code = code.upper()
-    if "R" in code:
-        return float(code.replace("R", "."))
-    if "K" in code:
-        return float(code.replace("K", ".")) * 1_000
-    if "M" in code:
-        return float(code.replace("M", ".")) * 1_000_000
-    return None
+    if not any(ch in code.upper() for ch in "RKM"):
+        return None
+    return parse_rkm_string(code)
 
 
 def _series_mantissa(val: float) -> Optional[float]:
@@ -184,10 +188,30 @@ def get_4digit_code(val: float) -> str:
     return f"{mant_3}{zeros}"
 
 
-def get_yageo_res_code(val: float) -> str:
+def _rkm_scale(val: float) -> Tuple[float, str]:
+    """Split a value into (scaled value, unit letter): 4700 -> (4.7, 'K')."""
     if val >= 1_000_000:
-        return f"{val/1_000_000:g}M"
+        return val / 1_000_000, "M"
     if val >= 1_000:
-        return f"{val/1_000:g}K"
-    return f"{val:g}R"
+        return val / 1_000, "K"
+    return val, "R"
+
+
+def get_yageo_res_code(val: float) -> str:
+    """YAGEO RT RKM code: 47R, 100R, 1K, 4K7, 4K75, 10K, 1M (letter acts as decimal point)."""
+    scaled, letter = _rkm_scale(val)
+    text = f"{scaled:g}"
+    return text.replace(".", letter) if "." in text else f"{text}{letter}"
+
+
+def get_vishay_res_code(val: float) -> str:
+    """Vishay TNPW 4-character code: 47R0, 100R, 1K00, 10K0, 100K, 1M00."""
+    scaled, letter = _rkm_scale(val)
+    if scaled < 10:
+        text = f"{scaled:.2f}"
+    elif scaled < 100:
+        text = f"{scaled:.1f}"
+    else:
+        return f"{scaled:.0f}{letter}"
+    return text.replace(".", letter)
 

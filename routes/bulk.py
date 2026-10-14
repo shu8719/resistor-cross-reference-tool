@@ -8,8 +8,10 @@ bulk_bp = Blueprint("bulk", __name__)
 
 @bulk_bp.route("/upload_bulk", methods=["POST"])
 def upload_bulk():
+    file = request.files.get("file")
+    if file is None:
+        return jsonify({"error": "ファイルが指定されていません"}), 400
     try:
-        file = request.files["file"]
         df = pd.read_excel(file, dtype=str)
     except Exception:
         return jsonify({"error": "Excel読込エラー"}), 400
