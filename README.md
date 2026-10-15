@@ -95,7 +95,7 @@ Excel 一括解析を試す場合は、`.csv` を `.xlsx` に変換してから�
 | バックエンド    | Python / Flask                                        |
 | データ処理     | pandas / openpyxl                                     |
 | フロントエンド   | Vue 3（CDN）/ Tailwind CSS（CDN）/ 素の JavaScript           |
-| デザイン      | Figma → CSS 変数によるデザイントークン、IBM Plex Sans JP / IBM Plex Mono |
+| デザイン      | Figma → CSS 変数によるデザイントークン |
 | テンプレート    | Jinja2（変数記法を `[[ ]]` に変更し、Vue の `{{ }}` と衝突しないようにしています） |
 | テスト       | pytest（パーサー・提案生成・逆引き・API の 60 ケース）                    |
 
