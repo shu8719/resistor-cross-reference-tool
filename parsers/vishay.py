@@ -1,8 +1,8 @@
 import re
 from typing import Optional
 
-from data.susumu_specs import SIZE_INCH_TO_METRIC
-from services.models import ParsedPN
+from data.specs import SIZE_INCH_TO_METRIC
+from parsers.models import ParsedPN
 from utils.resistor_code import parse_rkm_string
 
 RE_VISHAY_TNPW = re.compile(r"^TNPW(\d{4})([0-9RKM]+)([BDF])([HEXY])([A-Z0-9]{2})$")

@@ -56,7 +56,7 @@ def test_bulk_roundtrip(client):
     assert r.status_code == 200
     out = pd.read_excel(io.BytesIO(r.data))
     assert list(out["Match Grade"]) == ["◎", "△", "×"]
-    assert out.loc[0, "Susumu Proposal"] == "RG1608P-103-B-T5"
+    assert out.loc[0, "RG/RGV Proposal"] == "RG1608P-103-B-T5"
 
 
 def test_bulk_without_file_returns_400(client):
@@ -143,3 +143,16 @@ def test_bulk_excel_has_reverse_sheet(client):
     rev = sheets["Reverse Lookup"]
     assert list(rev["Row"]) == [2]
     assert rev.loc[0, "KOA"] == "RN73R1JTTD1002B25"
+
+
+def test_bulk_and_single_format_specs_the_same_way(client):
+    """Single-PN report and bulk rows share one formatter (±1%, not ±1.0%)."""
+    pn = "RN73R1JTTD1002F25"
+    single = client.post("/analyze", json={"pn": pn}).get_json()
+    df = pd.DataFrame({"PN": [pn]})
+    buf = io.BytesIO()
+    df.to_excel(buf, index=False)
+    buf.seek(0)
+    row = client.post("/analyze_bulk", data={"file": (buf, "in.xlsx")}, content_type="multipart/form-data").get_json()["rows"][0]
+    assert single["tol"] == row["tol"] == "±1%"
+    assert (single["size"], single["res"], single["tcr"]) == (row["size"], row["res"], row["tcr"])

@@ -1,11 +1,11 @@
 import re
 from typing import Optional
 
-from data.susumu_specs import RG_SIZES, RGV_SIZES, SUSUMU_TCR_ALLOWED_RGV, SUSUMU_TOL_CODE_RG, SUSUMU_TOL_CODE_RGV
-from services.models import ParsedPN
+from data.specs import RG_SIZES, RGV_SIZES, RGV_TCR_ALLOWED, RG_TOL_CODE, RGV_TOL_CODE
+from parsers.models import STATUS_RG_SERIES, ParsedPN
 from utils.resistor_code import is_e24, is_e96, parse_digit_code
 
-RE_SUSUMU = re.compile(r"^(RG|RGV)(\d{4})([NPQRV])([0-9R]{3,4})([BDFPW])")
+RE_RG = re.compile(r"^(RG|RGV)(\d{4})([NPQRV])([0-9R]{3,4})([BDFPW])")
 
 
 def _segments(pn: str, m: "re.Match[str]"):
@@ -21,8 +21,8 @@ def _segments(pn: str, m: "re.Match[str]"):
     return tuple(segs)
 
 
-def parse_susumu(pn: str) -> Optional[ParsedPN]:
-    m = RE_SUSUMU.search(pn)
+def parse_rg(pn: str) -> Optional[ParsedPN]:
+    m = RE_RG.search(pn)
     if not m:
         return None
     series, size, tcr_code, res_str, tol_code = m.group(1), m.group(2), m.group(3), m.group(4), m.group(5)
@@ -44,10 +44,10 @@ def parse_susumu(pn: str) -> Optional[ParsedPN]:
     if tcr_code not in tcr_map:
         return None
     tcr = tcr_map[tcr_code]
-    if series == "RGV" and tcr not in SUSUMU_TCR_ALLOWED_RGV:
+    if series == "RGV" and tcr not in RGV_TCR_ALLOWED:
         return None
 
-    tol_map = SUSUMU_TOL_CODE_RG if series == "RG" else SUSUMU_TOL_CODE_RGV
+    tol_map = RG_TOL_CODE if series == "RG" else RGV_TOL_CODE
     if tol_code not in tol_map:
         return None
     tol = tol_map[tol_code]
@@ -67,7 +67,7 @@ def parse_susumu(pn: str) -> Optional[ParsedPN]:
             return None
 
     return ParsedPN(
-        status_jp="Susumu純正",
+        status_jp=STATUS_RG_SERIES,
         size=size,
         res_ohm=res,
         tol_pct=tol,

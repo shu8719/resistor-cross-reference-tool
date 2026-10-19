@@ -1,7 +1,7 @@
 import math
 from typing import Optional, Set, Tuple
 
-from data.susumu_specs import E24_VALUES, E96_VALUES
+from data.specs import E24_VALUES, E96_VALUES
 
 
 def format_res(val: float) -> str:
@@ -75,83 +75,35 @@ def is_e96(val: float) -> bool:
     return _is_in_series(val, E96_VALUES)
 
 
-def get_susumu_res_code(val: float, size: str, series: str) -> str:
+def _get_3digit_code(val: float) -> str:
+    """3-character code ('R' as decimal point below 10 Ohm): 0.47 -> R47, 4.7 -> 4R7, 10k -> 103."""
+    if val <= 0:
+        raise ValueError("resistance must be positive")
+    if val < 1:
+        return f"R{int(round(val * 100)):02d}"
+    if val < 10:
+        i = int(val)
+        d = int(round((val - i) * 10))
+        if d == 10:  # carry
+            i, d = i + 1, 0
+        if i < 10:
+            return f"{i}R{d}"
+    exp = int(math.floor(math.log10(val)))
+    mant_2 = int(round(val / (10**exp) * 10))
+    return f"{mant_2}{exp - 1}"
+
+
+def get_rg_res_code(val: float, size: str, series: str) -> str:
     """
-    Generate Susumu nominal resistance code.
+    Generate the RG / RGV nominal resistance code.
     Catalog rules:
       - RG: E24 -> 3 digit, E96 -> 4 digit, except RG3216 is always 4 digit.
       - RGV: always 4 digit.
     """
     use_4_digit = (series == "RGV") or (size == "3216")
-
-    def code_3digit_with_r(v: float) -> Optional[str]:
-        # Always 3 characters, using 'R' as decimal point.
-        if v < 0:
-            raise ValueError("resistance must be positive")
-        if v < 1:
-            # e.g. 0.10 -> R10, 0.47 -> R47
-            n = int(round(v * 100))
-            return f"R{n:02d}"
-        if v < 10:
-            i = int(v)
-            d = int(round((v - i) * 10))
-            # carry
-            if d == 10:
-                i += 1
-                d = 0
-            if i >= 10:
-                return None
-            return f"{i}R{d}"
-        return None
-
-    def code_4digit_with_r(v: float) -> Optional[str]:
-        # Always 4 characters, using 'R' as decimal point.
-        if v < 0:
-            raise ValueError("resistance must be positive")
-        if v < 1:
-            # e.g. 0.100 -> R100, 0.470 -> R470
-            n = int(round(v * 1000))
-            return f"R{n:03d}"
-        if v < 10:
-            i = int(v)
-            d2 = int(round((v - i) * 100))
-            if d2 == 100:
-                i += 1
-                d2 = 0
-            if i >= 10:
-                return None
-            return f"{i}R{d2:02d}"
-        if v < 100:
-            i = int(v)
-            d1 = int(round((v - i) * 10))
-            if d1 == 10:
-                i += 1
-                d1 = 0
-            if i >= 100:
-                return None
-            return f"{i:02d}R{d1}"
-        return None
-
-    # RG E24 path (3-digit) unless forced 4-digit
-    if (not use_4_digit) and is_e24(val):
-        rcode = code_3digit_with_r(val)
-        if rcode is not None:
-            return rcode
-        exp = int(math.floor(math.log10(val)))
-        mantissa = val / (10**exp)
-        mant_2 = int(round(mantissa * 10))
-        zeros = exp - 1
-        return f"{mant_2}{zeros}"
-
-    # 4-digit path (RGV, RG3216, or non-E24)
-    rcode4 = code_4digit_with_r(val)
-    if rcode4 is not None:
-        return rcode4
-    exp = int(math.floor(math.log10(val)))
-    mantissa = val / (10**exp)
-    mant_3 = int(round(mantissa * 100))
-    zeros = exp - 2
-    return f"{mant_3}{zeros}"
+    if not use_4_digit and is_e24(val):
+        return _get_3digit_code(val)
+    return get_4digit_code(val)
 
 
 def get_4digit_code(val: float) -> str:

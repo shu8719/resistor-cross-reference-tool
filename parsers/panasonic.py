@@ -1,7 +1,7 @@
 import re
 from typing import Optional
 
-from data.susumu_specs import (
+from data.specs import (
     PANA_ERA_A_TO_INCH,
     PANA_ERA_PKG_CODE,
     PANA_ERA_RANGE,
@@ -9,7 +9,7 @@ from data.susumu_specs import (
     PANA_ERA_TOL_CODE,
     SIZE_INCH_TO_METRIC,
 )
-from services.models import ParsedPN
+from parsers.models import ParsedPN
 from utils.resistor_code import parse_digit_code
 
 RE_PANA_ERA_A = re.compile(r"^ERA(?:\-)?(?P<st>(1A|2A|3A|6A|8A))(?P<tcr>[RPEHK])(?P<tol>[WBCD])(?P<res>\d{3,4})(?P<pkg>[CXV])$")
@@ -70,4 +70,4 @@ def parse_panasonic(pn: str) -> Optional[ParsedPN]:
     if not (min_r <= res <= max_r):
         return ParsedPN(status_jp="範囲外(Panasonic ERAレンジ外)", **specs)
 
-    return ParsedPN(status_jp=f"薄膜(Panasonic ERA-{st})", pkg_code=pkg_code, **specs)
+    return ParsedPN(status_jp=f"薄膜(Panasonic ERA-{st})", **specs)

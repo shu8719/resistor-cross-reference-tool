@@ -1,8 +1,8 @@
 from typing import Dict, Tuple
 
-# Susumu manufacturing ranges (Ohm) by Size x TCR x Tolerance-code
+# RG / RGV manufacturing ranges (Ohm) by Size x TCR x Tolerance-code
 # tol_code: P(0.02), W(0.05), B(0.1), D(0.5)
-SUSUMU_SPECS_RG: Dict[str, Dict[int, Dict[str, Tuple[float, float]]]] = {
+RG_SPECS: Dict[str, Dict[int, Dict[str, Tuple[float, float]]]] = {
     "0603": {
         10: {"B": (100, 22_000)},
         25: {"B": (100, 22_000)},
@@ -35,7 +35,7 @@ SUSUMU_SPECS_RG: Dict[str, Dict[int, Dict[str, Tuple[float, float]]]] = {
     },
 }
 
-SUSUMU_SPECS_RGV: Dict[str, Dict[int, Tuple[int, int]]] = {
+RGV_SPECS: Dict[str, Dict[int, Tuple[int, int]]] = {
     "1608": {25: (100000, 1000000), 50: (100000, 1000000)},
     "2012": {25: (100000, 2000000), 50: (100000, 2000000)},
     "3216": {25: (120000, 3000000), 50: (120000, 3000000)},
@@ -162,12 +162,12 @@ E96_VALUES = {
     7.50, 7.68, 7.87, 8.06, 8.25, 8.45, 8.66, 8.87, 9.09, 9.31, 9.53, 9.76,
 }
 
-SUSUMU_TCR_CODE: Dict[int, str] = {5: "V", 10: "N", 25: "P", 50: "Q", 100: "R"}
-SUSUMU_TCR_ALLOWED_RG = {5, 10, 25, 50, 100}
-SUSUMU_TCR_ALLOWED_RGV = {25, 50}
+RG_TCR_CODE: Dict[int, str] = {5: "V", 10: "N", 25: "P", 50: "Q", 100: "R"}
+RG_TCR_ALLOWED = {5, 10, 25, 50, 100}
+RGV_TCR_ALLOWED = {25, 50}
 
-SUSUMU_TOL_CODE_RG: Dict[str, float] = {"P": 0.02, "W": 0.05, "B": 0.1, "D": 0.5}
-SUSUMU_TOL_CODE_RGV: Dict[str, float] = {"B": 0.1, "D": 0.5}
+RG_TOL_CODE: Dict[str, float] = {"P": 0.02, "W": 0.05, "B": 0.1, "D": 0.5}
+RGV_TOL_CODE: Dict[str, float] = {"B": 0.1, "D": 0.5}
 
 # Out-of-scope rules (strict filtering)
 OUT_OF_SCOPE_PREFIXES = (

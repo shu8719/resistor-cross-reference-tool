@@ -1,7 +1,7 @@
 import math
 from typing import Dict
 
-from data.susumu_specs import PANA_ERA_A_TO_INCH, SIZE_INCH_TO_METRIC, SIZE_METRIC_TO_INCH, SIZE_METRIC_TO_KOA
+from data.specs import PANA_ERA_A_TO_INCH, SIZE_INCH_TO_METRIC, SIZE_METRIC_TO_INCH, SIZE_METRIC_TO_KOA
 from utils.resistor_code import get_4digit_code, get_vishay_res_code, get_yageo_res_code, is_e24
 
 # metric size -> Panasonic ERA size digit ("1608" -> "3" for ERA3A), derived from the parser table

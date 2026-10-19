@@ -1,8 +1,8 @@
 import re
 from typing import Optional
 
-from data.susumu_specs import SIZE_INCH_TO_METRIC, YAGEO_RT_RANGE_BY_SIZE, YAGEO_RT_TCR_CODE, YAGEO_RT_TOL_CODE
-from services.models import ParsedPN
+from data.specs import SIZE_INCH_TO_METRIC, YAGEO_RT_RANGE_BY_SIZE, YAGEO_RT_TCR_CODE, YAGEO_RT_TOL_CODE
+from parsers.models import ParsedPN
 from utils.resistor_code import parse_yageo_rt_res_code
 
 RE_YAGEO_RT = re.compile(

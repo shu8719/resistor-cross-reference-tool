@@ -1,8 +1,8 @@
 import re
 from typing import Optional
 
-from data.susumu_specs import KOA_RN73H_RANGE, KOA_RN73R_RANGE, KOA_TCR_ALLOWED, SIZE_MAP_KOA
-from services.models import ParsedPN
+from data.specs import KOA_RN73H_RANGE, KOA_RN73R_RANGE, KOA_TCR_ALLOWED, SIZE_MAP_KOA
+from parsers.models import ParsedPN
 from utils.resistor_code import parse_digit_code
 
 RE_KOA_RN73 = re.compile(r"RN73([HR])(1E|1J|2A|2B|2E)[A-Z]*([0-9R]{4})([ABCDF])([0-9]{2,3})")

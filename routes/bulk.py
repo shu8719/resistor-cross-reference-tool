@@ -46,5 +46,5 @@ def upload_bulk():
         output,
         mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         as_attachment=True,
-        download_name="Susumu_Cross_Reference.xlsx",
+        download_name="CrossRef_Result.xlsx",
     )
