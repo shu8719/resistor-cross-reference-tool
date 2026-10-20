@@ -18,8 +18,7 @@
 * **公差を変えて再検索** — 公差だけが原因のときは、公差コードを差し替えた入力品番を候補として提示します（実際に提案できるものだけ）
 * **逆引き** — RG / RGV 品番から、KOA・YAGEO・Vishay・Panasonic の相当品番を生成します
 * **Excel 一括解析** — アップロードした全行をその場で一覧でき、判定別の件数・絞り込み・ページ送りのあと `.xlsx` でダウンロードできます
-* **日本語 / English 切替**、**最近の検索**（ブラウザに5件保存）、**URL での共有**（`?pn=RN73R1JTTD1002B25`）
-
+* **日本語 / English 切替**、**最近の検索**（ブラウザに5件保存）
 ## 画面
 
 UI は Figma で設計し、デザイントークンを CSS 変数として実装しています。
@@ -99,7 +98,7 @@ Cloudflare へのデプロイは `uv run pywrangler deploy` で行います。
 | --------- | ----------------------------------------------------- |
 | バックエンド    | Python / Flask                                        |
 | Excel 読み書き  | openpyxl                                              |
-| フロントエンド   | Vue 3（CDN）/ Tailwind CSS（CDN）/ 素の JavaScript           |
+| フロントエンド   | Vue 3（CDN）/ Tailwind CSS（CDN）/ JavaScript           |
 | デザイン      | Figma → CSS 変数によるデザイントークン |
 | テンプレート    | Jinja2                  |
 | テスト       | pytest                    |
@@ -133,8 +132,6 @@ cross-reference/
 ├── scripts/        # Cloudflare へのアップロード内容を組み立てるスクリプト
 └── pyproject.toml  # 依存ライブラリ
 ```
-
-処理の流れは `routes → services → parsers → utils` の一方向になるよう設計しています。
 
 ## ロジックの流れ
 
