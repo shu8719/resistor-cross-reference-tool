@@ -1,9 +1,38 @@
 import io
 
-import pandas as pd
 import pytest
+from openpyxl import Workbook, load_workbook
+from openpyxl.styles import Font
 
 from app import app
+
+
+def _xlsx(rows, post=None):
+    """In-memory workbook from a list of rows (None leaves the cell empty)."""
+    wb = Workbook()
+    ws = wb.active
+    for r in rows:
+        ws.append(r)
+    if post:
+        post(ws)
+    buf = io.BytesIO()
+    wb.save(buf)
+    buf.seek(0)
+    return buf
+
+
+def _column(header, values):
+    return _xlsx([[header]] + [[v] for v in values])
+
+
+def _sheets(data):
+    """{sheet name: {column header: [cell values]}} of a downloaded workbook."""
+    wb = load_workbook(io.BytesIO(data))
+    out = {}
+    for ws in wb.worksheets:
+        header, *rows = ws.iter_rows(values_only=True)
+        out[ws.title] = {h: [r[i] for r in rows] for i, h in enumerate(header)}
+    return out
 
 
 @pytest.fixture
@@ -48,20 +77,43 @@ def test_missing_pn_returns_400(client):
 
 
 def test_bulk_roundtrip(client):
-    df = pd.DataFrame({"Part Number": ["RN73R1JTTD1002B25", None, "CRCW04021K00FKEA"]})
-    buf = io.BytesIO()
-    df.to_excel(buf, index=False)
-    buf.seek(0)
+    buf = _column("Part Number", ["RN73R1JTTD1002B25", None, "CRCW04021K00FKEA"])
     r = client.post("/upload_bulk", data={"file": (buf, "in.xlsx")}, content_type="multipart/form-data")
     assert r.status_code == 200
-    out = pd.read_excel(io.BytesIO(r.data))
-    assert list(out["Match Grade"]) == ["◎", "△", "×"]
-    assert out.loc[0, "RG/RGV Proposal"] == "RG1608P-103-B-T5"
+    out = _sheets(r.data)["Results"]
+    assert out["Match Grade"] == ["◎", "△", "×"]
+    assert out["RG/RGV Proposal"][0] == "RG1608P-103-B-T5"
 
 
 def test_bulk_without_file_returns_400(client):
     r = client.post("/upload_bulk", data={}, content_type="multipart/form-data")
     assert r.status_code == 400
+
+
+def test_bulk_non_excel_returns_400(client):
+    buf = io.BytesIO(b"Part Number\nRN73R1JTTD1002B25\n")
+    r = client.post("/analyze_bulk", data={"file": (buf, "in.csv")}, content_type="multipart/form-data")
+    assert r.status_code == 400
+    assert r.get_json()["error"] == "Excel読込エラー"
+
+
+def test_bulk_keeps_other_columns_and_ignores_trailing_blank_cells(client):
+    def styled_tail(ws):
+        ws.cell(row=30, column=1).font = Font(bold=True)  # formatted but empty
+
+    rows = [["Qty", "MFR PN"], [100, "RN73R1JTTD1002B25"], [5, "RG1608P-103-B-T5"]]
+    r = client.post(
+        "/analyze_bulk", data={"file": (_xlsx(rows, styled_tail), "in.xlsx")}, content_type="multipart/form-data"
+    ).get_json()
+    assert r["pn_column"] == "MFR PN"
+    assert r["row_count"] == 2
+
+    r = client.post(
+        "/upload_bulk", data={"file": (_xlsx(rows, styled_tail), "in.xlsx")}, content_type="multipart/form-data"
+    )
+    out = _sheets(r.data)["Results"]
+    assert out["Qty"] == [100, 5]
+    assert out["Match Grade"] == ["◎", "REVERSE"]
 
 
 def test_analyze_payload_explains_match(client):
@@ -103,10 +155,7 @@ def test_analyze_payload_out_of_scope_and_unknown(client):
 
 
 def test_bulk_json(client):
-    df = pd.DataFrame({"MFR PN": ["RN73R1JTTD1002B25", None, "RG1608P-103-B-T5", "RC0603FR-0710KL", "ABC-1234-XYZ"]})
-    buf = io.BytesIO()
-    df.to_excel(buf, index=False)
-    buf.seek(0)
+    buf = _column("MFR PN", ["RN73R1JTTD1002B25", None, "RG1608P-103-B-T5", "RC0603FR-0710KL", "ABC-1234-XYZ"])
     r = client.post("/analyze_bulk", data={"file": (buf, "parts.xlsx")}, content_type="multipart/form-data")
     assert r.status_code == 200
     body = r.get_json()
@@ -122,37 +171,28 @@ def test_bulk_json(client):
 
 
 def test_bulk_json_short_reason_for_out_of_range(client):
-    df = pd.DataFrame({"PN": ["RN73R1JTTD1002F25"]})
-    buf = io.BytesIO()
-    df.to_excel(buf, index=False)
-    buf.seek(0)
+    buf = _column("PN", ["RN73R1JTTD1002F25"])
     r = client.post("/analyze_bulk", data={"file": (buf, "in.xlsx")}, content_type="multipart/form-data").get_json()
     assert r["rows"][0]["grade"] == "！"
     assert r["rows"][0]["note_jp"] == "公差対象外（±1%）"
 
 
 def test_bulk_excel_has_reverse_sheet(client):
-    df = pd.DataFrame({"Part Number": ["RG1608P-103-B-T5", "RN73R1JTTD1002B25"]})
-    buf = io.BytesIO()
-    df.to_excel(buf, index=False)
-    buf.seek(0)
+    buf = _column("Part Number", ["RG1608P-103-B-T5", "RN73R1JTTD1002B25"])
     r = client.post("/upload_bulk", data={"file": (buf, "in.xlsx")}, content_type="multipart/form-data")
-    sheets = pd.read_excel(io.BytesIO(r.data), sheet_name=None)
+    sheets = _sheets(r.data)
     assert list(sheets) == ["Results", "Reverse Lookup"]
-    assert list(sheets["Results"]["Match Grade"]) == ["REVERSE", "◎"]
+    assert sheets["Results"]["Match Grade"] == ["REVERSE", "◎"]
     rev = sheets["Reverse Lookup"]
-    assert list(rev["Row"]) == [2]
-    assert rev.loc[0, "KOA"] == "RN73R1JTTD1002B25"
+    assert rev["Row"] == [2]
+    assert rev["KOA"][0] == "RN73R1JTTD1002B25"
 
 
 def test_bulk_and_single_format_specs_the_same_way(client):
     """Single-PN report and bulk rows share one formatter (±1%, not ±1.0%)."""
     pn = "RN73R1JTTD1002F25"
     single = client.post("/analyze", json={"pn": pn}).get_json()
-    df = pd.DataFrame({"PN": [pn]})
-    buf = io.BytesIO()
-    df.to_excel(buf, index=False)
-    buf.seek(0)
+    buf = _column("PN", [pn])
     row = client.post("/analyze_bulk", data={"file": (buf, "in.xlsx")}, content_type="multipart/form-data").get_json()["rows"][0]
     assert single["tol"] == row["tol"] == "±1%"
     assert (single["size"], single["res"], single["tcr"]) == (row["size"], row["res"], row["tcr"])

@@ -6,6 +6,8 @@
 業務で発生していた「品番を見てカタログを引き、代替品を手で探す」作業を効率化するために開発した個人開発プロジェクトです。
 判定ロジックだけでなく、**なぜその結果になったのかが画面上で分かること**を重視して設計しています。
 
+**デモ：https://resistor-cross-reference.shu8719.workers.dev**
+
 ![単体解析画面](docs/images/single-analysis.png)
 
 ## 特徴
@@ -68,37 +70,42 @@ UI は Figma で設計し、デザイントークンを CSS 変数として実�
 
 ## 使い方
 
-```bash
-# 依存ライブラリをインストール
-pip install -r requirements.txt
+https://resistor-cross-reference.shu8719.workers.dev で公開しています。品番を入力すると、判定結果と判定プロセスが表示されます。
+次のリンクからは、例の品番を検索した状態で開けます。
 
-# サーバーを起動
-python app.py
+| 例           | 品番 |
+| ----------- | --- |
+| ◎ 代替候補あり     | [RN73R1JTTD1002B25](https://resistor-cross-reference.shu8719.workers.dev/?pn=RN73R1JTTD1002B25) |
+| ！ 対応範囲外（公差） | [RN73R1JTTD1002F25](https://resistor-cross-reference.shu8719.workers.dev/?pn=RN73R1JTTD1002F25) |
+| ⇄ 逆引き       | [RG1608N-1002-B-T5](https://resistor-cross-reference.shu8719.workers.dev/?pn=RG1608N-1002-B-T5) |
+
+Excel 一括解析では、列名に「PN」または「PART」を含む列を品番列として自動で検出します。`sample/sample_input.csv` を `.xlsx` に変換すると試せます。
+
+### ローカルで動かす
+
+[uv](https://docs.astral.sh/uv/) を使います。
+
+```bash
+uv sync                # 依存ライブラリをインストール
+uv run python app.py   # http://localhost:5000 で起動
+uv run pytest          # テストを実行
 ```
 
-ブラウザで `http://localhost:5000` を開いてください。
-（macOS で AirPlay Receiver がポート 5000 を使っている場合は、`python -c "from app import app; app.run(port=5055)"` のように別ポートで起動してください）
-
-```bash
-# テストを実行
-python -m pytest
-```
-
-`sample/sample_input.csv` に動作確認用の品番サンプルがあります。
-Excel 一括解析を試す場合は、`.csv` を `.xlsx` に変換してからアップロードしてください。品番列は列名に「PN」または「PART」を含む列を自動で検出します。
+Cloudflare へのデプロイは `uv run pywrangler deploy` で行います。
 
 ## 技術スタック
 
 | 分類        | 技術                                                    |
 | --------- | ----------------------------------------------------- |
 | バックエンド    | Python / Flask                                        |
-| データ処理     | pandas / openpyxl                                     |
+| Excel 読み書き  | openpyxl                                              |
 | フロントエンド   | Vue 3（CDN）/ Tailwind CSS（CDN）/ 素の JavaScript           |
 | デザイン      | Figma → CSS 変数によるデザイントークン |
 | テンプレート    | Jinja2                  |
 | テスト       | pytest                    |
+| ホスティング    | Cloudflare Workers（Python Workers）                     |
 
-Node.js やビルドツールを使わず、Python / Flask だけでバックエンドと画面を動かせる構成にしています。
+画面にビルド工程はなく、手元では Python / Flask だけでバックエンドと画面を動かせる構成にしています。
 
 ## API
 
@@ -114,13 +121,17 @@ Node.js やビルドツールを使わず、Python / Flask だけでバックエ
 cross-reference/
 ├── app.py          # アプリの起動・ルート登録
 ├── routes/         # URL と HTTP メソッドの定義
-├── services/       # 判定（analyze_pn）・代替品番生成・逆引き・判定理由の組み立て・一括処理
+├── services/       # 判定・代替品番生成・逆引き・判定理由の組み立て・一括処理
 ├── parsers/        # メーカーごとの品番パーサー（各社独立ファイル）と、解析結果のモデル ParsedPN
 ├── utils/          # 品番正規化・抵抗値コード変換・表示の整形などの共通関数
 ├── data/           # 仕様テーブルや定数の定義
 ├── static/         # CSS（デザイントークン・コンポーネント）/ JS（Vue アプリ・翻訳辞書）/ SVG アイコン
 ├── templates/      # HTML（Vue 3 を使った UI）
-└── tests/          # pytest
+├── tests/          # pytest
+├── worker.py       # Cloudflare Workers の入口（Flask アプリを WSGI で渡す）
+├── wrangler.jsonc  # Cloudflare Workers の設定
+├── scripts/        # Cloudflare へのアップロード内容を組み立てるスクリプト
+└── pyproject.toml  # 依存ライブラリ
 ```
 
 処理の流れは `routes → services → parsers → utils` の一方向になるよう設計しています。
