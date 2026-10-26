@@ -104,7 +104,6 @@ Cloudflare へのデプロイは `uv run pywrangler deploy` で行います。
 | テスト       | pytest                    |
 | ホスティング    | Cloudflare Workers（Python Workers）                     |
 
-画面にビルド工程はなく、手元では Python / Flask だけでバックエンドと画面を動かせる構成にしています。
 
 ## API
 
@@ -124,8 +123,8 @@ cross-reference/
 ├── parsers/        # メーカーごとの品番パーサー（各社独立ファイル）と、解析結果のモデル ParsedPN
 ├── utils/          # 品番正規化・抵抗値コード変換・表示の整形などの共通関数
 ├── data/           # 仕様テーブルや定数の定義
-├── static/         # CSS（デザイントークン・コンポーネント）/ JS（Vue アプリ・翻訳辞書）/ SVG アイコン
-├── templates/      # HTML（Vue 3 を使った UI）
+├── static/         # CSS/ JS（Vue アプリ・翻訳辞書）/ SVG アイコン
+├── templates/      # HTML
 ├── tests/          # pytest
 ├── worker.py       # Cloudflare Workers の入口（Flask アプリを WSGI で渡す）
 ├── wrangler.jsonc  # Cloudflare Workers の設定
