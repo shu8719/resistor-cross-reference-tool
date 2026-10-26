@@ -92,6 +92,8 @@ uv run pytest          # テストを実行
 
 Cloudflare へのデプロイは `uv run pywrangler deploy` で行います。
 
+## 技術スタック
+
 | 分類 | 技術 |
 | --- | --- |
 | バックエンド | Python / Flask（Jinja2） |
