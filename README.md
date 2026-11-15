@@ -92,6 +92,16 @@ uv run pytest          # テストを実行
 
 Cloudflare へのデプロイは `uv run pywrangler deploy` で行います。
 
+## システム構成
+
+Cloudflare Workers の静的アセットと Python Worker（Flask）だけで動くステートレスな構成です。
+ファイルがあるリクエストは Static Assets が返し、API（`POST /analyze` など）だけが Flask に届きます。サーバー側に DB・セッションは持たず、仕様テーブルはコードに同梱しています。
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/architecture-dark.png">
+  <img src="docs/images/architecture.png" alt="システム構成図：利用者がブラウザの Vue 3 SPA を操作し、SPA は外部 CDN（unpkg・Tailwind CSS・Google Fonts）を読み込み、HTTPS で Cloudflare Workers にアクセスする。Workers はファイルがあれば Static Assets を返し、API は Python Worker の Flask に渡す。Flask → 判定ロジック → 品番パーサー → 仕様テーブルの順に処理し、一括解析では openpyxl を使う。ローカルでは uv と pytest を使い、pywrangler でデプロイする" width="100%">
+</picture>
+
 ## 技術スタック
 
 | 分類 | 技術 |
