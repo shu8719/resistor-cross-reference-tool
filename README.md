@@ -100,7 +100,6 @@ Cloudflare Workers の静的アセットと Python Worker（Flask）だけで動
 | バックエンド | Python / Flask |
 | Excel 読み書き | openpyxl |
 | フロントエンド | Vue 3 / Tailwind CSS |
-| デザイン | Figma |
 | テスト | pytest |
 | ホスティング | Cloudflare Workers（Python Workers） |
 
