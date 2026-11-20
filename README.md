@@ -125,7 +125,7 @@ resistor-cross-reference-tool/
 ├── static/         # CSS / JS（Vue アプリ・翻訳辞書）/ SVG アイコン
 ├── templates/      # HTML
 ├── tests/          # pytest
-├── worker.py       # Cloudflare Workers の入口（Flask アプリを WSGI で渡す）
+├── worker.py       # Cloudflare Workers の入口
 ├── wrangler.jsonc  # Cloudflare Workers の設定
 ├── scripts/        # Cloudflare へのアップロード内容を組み立てるスクリプト
 └── pyproject.toml  # 依存ライブラリ
@@ -152,7 +152,6 @@ KOA・YAGEO・Vishay・Panasonic・RG / RGV のパーサーを独立したファ
 
 * 逆引きで生成する品番が各社の製造レンジ内かを検証する
 * 対応メーカー・シリーズを追加する
-* RGV シリーズの包装コードテーブルを拡充する
 * 一括解析の結果表から、各行の判定プロセスを開けるようにする
 * パーサーの判定結果（対象外・範囲外・不明）を、日本語の文字列ではなく状態コードで持つ
 * Tailwind CSS を Play CDN からビルド済みの CSS に切り替える
