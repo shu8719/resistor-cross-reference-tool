@@ -10,36 +10,37 @@
 
 ![単体解析画面](docs/images/single-analysis.png)
 
+次のリンクからは、例の品番を検索した状態で開けます。
+
+| 例           | 品番 |
+| ----------- | --- |
+| ◎ 代替候補あり     | [RN73R1JTTD1002B25](https://resistor-cross-reference.shu8719.workers.dev/?pn=RN73R1JTTD1002B25) |
+| ！ 対応範囲外（公差） | [RN73R1JTTD1002F25](https://resistor-cross-reference.shu8719.workers.dev/?pn=RN73R1JTTD1002F25) |
+| ⇄ 逆引き       | [RG1608N-1002-B-T5](https://resistor-cross-reference.shu8719.workers.dev/?pn=RG1608N-1002-B-T5) |
+
 ## 特徴
 
 * **品番を1件入れるだけ** — サイズ・抵抗値・公差・TCR（温度係数）を品番から自動抽出し、代替候補品番を提案します
 * **判定プロセスの可視化** — 正規化 → メーカー判定 → スペック抽出 → 仕様範囲の確認 → 代替候補の生成、の各ステップを結果の横に表示します
 * **提案できない理由を説明** — 「公差が対応範囲外です」のような理由文と、スペックごとの対応／範囲外の表を返します
-* **公差を変えて再検索** — 公差だけが原因のときは、公差コードを差し替えた入力品番を候補として提示します（実際に提案できるものだけ）
+* **公差を変えて再検索** — 公差だけが原因のときは、公差コードを差し替えた入力品番を候補として提示します
 * **逆引き** — RG / RGV 品番から、KOA・YAGEO・Vishay・Panasonic の相当品番を生成します
 * **Excel 一括解析** — アップロードした全行をその場で一覧でき、判定別の件数・絞り込み・ページ送りのあと `.xlsx` でダウンロードできます
 * **日本語 / English 切替**、**最近の検索**（ブラウザに5件保存）
+
 ## 画面
 
 UI は Figma で設計し、デザイントークンを CSS 変数として実装しています。
-以下はすべて実際のアプリのスクリーンショットです。
 
 ### 単体解析 — 提案できない場合
-
-理由と、スペックごとの対応／範囲外を表で示します。公差だけが原因のときは再検索候補を提示します。
 
 ![対応範囲外画面](docs/images/out-of-range.png)
 
 ### 逆引き（RG → 他社）
 
-スペックのタイルと、メーカーごとの相当品番を一覧表示します。品番は1件ずつ、または一覧でコピーできます。
-
 ![逆引き画面](docs/images/reverse-lookup.png)
 
 ### Excel 一括解析
-
-判定別の集計タイル、絞り込み（判定・品番）、ページ送り付きの結果表を表示します。
-ダウンロードする Excel には結果列が追加され、逆引き行は別シート「Reverse Lookup」に出力されます。
 
 ![Excel一括解析画面](docs/images/bulk-analysis.png)
 
@@ -66,17 +67,7 @@ UI は Figma で設計し、デザイントークンを CSS 変数として実�
 | △ 形式不明     | `△`       | 品番の形式を判定できない、またはコードが未定義            |
 | ⇄ 逆引き      | `REVERSE` | RG / RGV 品番を検出し、他社相当品を生成           |
 
-
 ## 使い方
-
-https://resistor-cross-reference.shu8719.workers.dev で公開しています。品番を入力すると、判定結果と判定プロセスが表示されます。
-次のリンクからは、例の品番を検索した状態で開けます。
-
-| 例           | 品番 |
-| ----------- | --- |
-| ◎ 代替候補あり     | [RN73R1JTTD1002B25](https://resistor-cross-reference.shu8719.workers.dev/?pn=RN73R1JTTD1002B25) |
-| ！ 対応範囲外（公差） | [RN73R1JTTD1002F25](https://resistor-cross-reference.shu8719.workers.dev/?pn=RN73R1JTTD1002F25) |
-| ⇄ 逆引き       | [RG1608N-1002-B-T5](https://resistor-cross-reference.shu8719.workers.dev/?pn=RG1608N-1002-B-T5) |
 
 Excel 一括解析では、列名に「PN」または「PART」を含む列を品番列として自動で検出します。`sample/sample_input.csv` を `.xlsx` に変換すると試せます。
 
@@ -99,20 +90,19 @@ Cloudflare Workers の静的アセットと Python Worker（Flask）だけで動
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/architecture-dark.png">
-  <img src="docs/images/architecture.png" alt="システム構成図：利用者がブラウザの Vue 3 SPA を操作し、SPA は外部 CDN（unpkg・Tailwind CSS・Google Fonts）を読み込み、HTTPS で Cloudflare Workers にアクセスする。Workers はファイルがあれば Static Assets を返し、API は Python Worker の Flask に渡す。Flask → 判定ロジック → 品番パーサー → 仕様テーブルの順に処理し、一括解析では openpyxl を使う。ローカルでは uv と pytest を使い、pywrangler でデプロイする" width="100%">
+  <img src="docs/images/architecture.png" alt="システム構成図：利用者がブラウザの Vue 3 SPA を操作し、SPA は HTTPS で Cloudflare Workers にアクセスする。Workers はファイルがあれば Static Assets を返し、API は Python Worker の Flask に渡す。Flask → 判定ロジック → 品番パーサー → 仕様テーブルの順に処理し、一括解析では openpyxl を使う" width="100%">
 </picture>
 
 ## 技術スタック
 
 | 分類 | 技術 |
 | --- | --- |
-| バックエンド | Python / Flask（Jinja2） |
+| バックエンド | Python / Flask |
 | Excel 読み書き | openpyxl |
 | フロントエンド | Vue 3 / Tailwind CSS |
 | デザイン | Figma |
 | テスト | pytest |
 | ホスティング | Cloudflare Workers（Python Workers） |
-
 
 ## API
 
@@ -125,11 +115,11 @@ Cloudflare Workers の静的アセットと Python Worker（Flask）だけで動
 ## プロジェクト構成
 
 ```text
-cross-reference/
+resistor-cross-reference-tool/
 ├── app.py          # アプリの起動・ルート登録
 ├── routes/         # URL と HTTP メソッドの定義
 ├── services/       # 判定・代替品番生成・逆引き・判定理由の組み立て・一括処理
-├── parsers/        # メーカーごとの品番パーサー（各社独立ファイル）と、解析結果のモデル ParsedPN
+├── parsers/        # メーカーごとの品番パーサーと、解析結果のモデル ParsedPN
 ├── utils/          # 品番正規化・抵抗値コード変換・表示の整形などの共通関数
 ├── data/           # 仕様テーブルや定数の定義
 ├── static/         # CSS / JS（Vue アプリ・翻訳辞書）/ SVG アイコン
@@ -141,21 +131,12 @@ cross-reference/
 └── pyproject.toml  # 依存ライブラリ
 ```
 
-## ロジックの流れ
-
-1. **品番の正規化** — 入力から記号・スペースを除去し、大文字に統一します（例: `rn73r-1j` → `RN73R1J`）
-2. **メーカー・シリーズの判定** — 正規表現で KOA・YAGEO・Vishay・Panasonic・RG / RGV のいずれかを判定し、品番をセグメント（シリーズ・サイズ・抵抗値・公差・TCR…）に分解します
-3. **スペックの抽出** — サイズ・抵抗値・公差・TCR を品番コードから読み取ります
-4. **仕様範囲の確認** — 抽出したスペックが RG / RGV シリーズの製造レンジ内かを確認します
-5. **代替候補品番の生成** — 範囲内であれば、シリーズの命名規則に従って代替候補品番を組み立てます
-6. **結果の説明** — 各ステップの成否、入力品と推奨品の比較、範囲外の場合は理由と再検索候補を組み立てて返します
-
 ## 工夫した点
 
 ### 「なぜその結果か」を画面で説明する
 
-判定ロジックは `services/explain.py` で「判定プロセス」「品番の分解」「スペック比較」「理由文」に変換して返しています。
-提案できない場合も単にエラーにせず、どのスペックが範囲外かと、次に試せる品番を提示するようにしました。
+画面向けの説明は、`services/explain.py` で判定結果から組み立てています。
+理由文は日英の両方を返すので、言語を切り替えても再リクエストは発生しません。公差の再検索候補も、差し替えた品番を実際に判定し直し、代替候補が出るものだけを提示しています。
 
 ### メーカーごとにパーサーを分けた
 
@@ -165,7 +146,7 @@ KOA・YAGEO・Vishay・Panasonic・RG / RGV のパーサーを独立したファ
 ### 単体解析と一括解析で同じ判定を使う
 
 判定は `services/analyzer.py` の `analyze_pn` に一本化し、単体解析の画面・一括解析の一覧・Excel 出力はすべて同じ判定結果から組み立てています。
-提案できない理由も、文言ではなく理由コード（公差・TCR・サイズなど）として受け渡すので、表示側の文言を変えても判定が壊れません。
+代替品を提案できない理由は、文言ではなく理由コード（公差・TCR・サイズなど）で受け渡し、単体解析の理由文も一括解析の短い理由も、このコードから組み立てています。
 
 ## 今後の改善点
 
@@ -173,3 +154,5 @@ KOA・YAGEO・Vishay・Panasonic・RG / RGV のパーサーを独立したファ
 * 対応メーカー・シリーズを追加する
 * RGV シリーズの包装コードテーブルを拡充する
 * 一括解析の結果表から、各行の判定プロセスを開けるようにする
+* パーサーの判定結果（対象外・範囲外・不明）を、日本語の文字列ではなく状態コードで持つ
+* Tailwind CSS を Play CDN からビルド済みの CSS に切り替える
